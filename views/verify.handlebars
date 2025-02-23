@@ -1,0 +1,96 @@
+<div class="page page-center">
+  <div class="container container-tight py-4">
+    <div class="text-center mb-4">
+      <a href="." class="navbar-brand navbar-brand-autodark">
+        <img src="/static/images/logo.png" width="110" height="32" alt="Tabler" class="navbar-brand-image">
+      </a>
+    </div>
+    <div class="card card-md" dir="rtl">
+      <div class="card-body">
+        <h2 class="h2 text-center mb-4">التحقق من الهاتف</h2>
+        <form action="/login" method="post" autocomplete="on" novalidate>
+          <div class="mb-3">
+            <label class="form-label">أدخل رقم هاتفك لتحصل على 6 أرقام لمرة واحدة</label>
+            <input id="tel" type="tel" class="form-control" placeholder="+9705XXXXXXXX" autocomplete="off" required>
+          </div>
+
+          <div class="mb-3">
+            <button id="send-code" class="btn btn-primary w-100">إرسال الرمز</button>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">أدخل 6 أرقام لمرة واحدة المرسلة إلى رقم هاتفك</label>
+            <div class="row g-2" dir="ltr">
+              <div class="col">
+                <input type="text" class="form-control text-center otp-input" maxlength="1">
+              </div>
+              <div class="col">
+                <input type="text" class="form-control text-center otp-input" maxlength="1">
+              </div>
+              <div class="col">
+                <input type="text" class="form-control text-center otp-input" maxlength="1">
+              </div>
+              <div class="col">
+                <input type="text" class="form-control text-center otp-input" maxlength="1">
+              </div>
+              <div class="col">
+                <input type="text" class="form-control text-center otp-input" maxlength="1">
+              </div>
+              <div class="col">
+                <input type="text" class="form-control text-center otp-input" maxlength="1">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button disabled id="submit" type="submit" class="btn btn-primary w-100">تسجيل الدخول</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  $('.otp-input').on('input', function () {
+    $(this).closest('.col').next('.col').find('.otp-input').focus()
+  });
+
+  $(document).on("submit", "form", function (e) {
+    e.preventDefault();
+
+    const email = $('#tel').val();
+    const otp = $('#otp').val();
+
+    const elem = $('#submit');
+    let currentBtnHTML = $(elem).html();
+    $(elem).html(`<span class="spinner-border spinner-border-sm me-2" role="status"></span>`);
+    // Perform AJAX POST request
+    $.ajax({
+      url: '/login',
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({ email, password, rememberMe }),
+      success: function (response) {
+        $(elem).html(currentBtnHTML);
+        window.location.href = "/dashboard";
+      },
+      error: function (xhr, status, error) {
+        $(elem).html(currentBtnHTML);
+        $(".form-footer").after(`
+            <div class="alert alert-danger mt-4" role="alert">
+              <h4 class="alert-title">Login failed!</h4>
+              <div class="text-secondary">${xhr.responseText}</div>
+            </div>`);
+      }
+    });
+
+  });
+
+  $('#togglePassword').on('click', function () {
+    const passwordField = $('#password');
+    const type = passwordField.attr('type') === 'password' ? 'text' : 'password';
+    passwordField.attr('type', type);
+  });
+</script>
