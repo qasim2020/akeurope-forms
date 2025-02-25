@@ -16,10 +16,10 @@ const User = require('./models/User');
 
 const { generateFormFields } = require('./modules/generateFormFields');
 const hbsHelpers = require('./modules/helpers');
+const { sendErrorToTelegram } = require('./modules/telegramBot');
 
 const uploadRoutes = require('./routes/uploadRoutes');
 const entryRoutes = require('./routes/entryRoutes');
-const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3010;
@@ -56,6 +56,38 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 app.use('/tabler', express.static(path.join(__dirname, 'node_modules', '@tabler', 'core', 'dist')));
 app.use('/static', express.static(path.join(__dirname, 'static')));
 
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    console.log(req.originalUrl);
+    let oldSend = res.send;
+    let oldJson = res.json;
+
+    let responseBody;
+
+    res.send = function (data) {
+        responseBody = data;
+        return oldSend.apply(res, arguments);
+    };
+
+    res.json = function (data) {
+        responseBody = data;
+        return oldJson.apply(res, arguments);
+    };
+
+    res.on('finish', () => {
+        if (res.statusCode > 399) {
+            const errorData = {
+                message: responseBody,
+                status: res.statusCode,
+                url: req.originalUrl,
+            };
+
+            sendErrorToTelegram(errorData);
+        }
+    });
+    next();
+});
+
 app.use(uploadRoutes);
 app.use(entryRoutes);
 
@@ -82,19 +114,23 @@ app.get('/new-orphan', async (req, res) => {
 });
 
 app.get('/orphan/:entryId', async (req, res) => {
-    if (!req.session.verified) return res.redirect('/');
-    const entry = await OrphanArabic.findById(req.params.entryId).lean();
-    const formFields = generateFormFields(OrphanArabic.schema, entry, true);
-    const uploads = await OrphanArabic.find({ 'uploadedBy.actorId': req.session.user._id }).lean();
-    res.render('form', {
-        layout: 'main',
-        data: {
-            uploads,
-            formFields,
-            rtl: true,
-            entryId: entry._id,
-        },
-    });
+    try {
+        if (!req.session.verified) return res.redirect('/');
+        const entry = await OrphanArabic.findById(req.params.entryId).lean();
+        const formFields = generateFormFields(OrphanArabic.schema, entry, true);
+        const uploads = await OrphanArabic.find({ 'uploadedBy.actorId': req.session.user._id }).lean();
+        res.render('form', {
+            layout: 'main',
+            data: {
+                uploads,
+                formFields,
+                rtl: true,
+                entryId: entry._id,
+            },
+        });
+    } catch (error) {
+        res.status(400).send(error.message);
+    }
 });
 
 app.get('/', (req, res) => {
