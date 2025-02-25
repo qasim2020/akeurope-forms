@@ -141,8 +141,12 @@ app.post('/send-code', async (req, res) => {
     try {
         const { phone } = req.body;
         if (!phone) throw new Error('Phone is required');
-        req.session.phone = phone;
-        await twilioClient.verify.v2.services(process.env.TWILIO_VERIFY_SID).verifications.create({ to: phone, channel: 'sms' });
+
+        req.session.phone = phone.trim().replace(/\s+/g, '');
+
+        await twilioClient.verify.v2.services(process.env.TWILIO_VERIFY_SID)
+            .verifications.create({ to: req.session.phone, channel: 'sms' });
+
         res.status(200).send('Code sent!');
     } catch (error) {
         console.log(error);
