@@ -16,24 +16,48 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&display=swap" rel="stylesheet">
 
-<style>
-    @import url('https://rsms.me/inter/inter.css');
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&display=swap');
+    <style>
+        @import url('https://rsms.me/inter/inter.css');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&display=swap');
 
-    :root {
-        --tblr-font-sans-serif: 'Noto Sans Arabic', 'Tajawal', 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
-    }
+        :root {
+            --tblr-font-sans-serif: 'Noto Sans Arabic', 'Tajawal', 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
+        }
 
-    body {
-        font-feature-settings: "cv03", "cv04", "cv11";
-        font-family: var(--tblr-font-sans-serif);
-        font-size: 16px;
-    }
+        body {
+            font-feature-settings: "cv03", "cv04", "cv11";
+            font-family: var(--tblr-font-sans-serif);
+            font-size: 16px;
+        }
 
-    input.form-control {
-        height: 3rem;
-    }
-</style>
+        .btn-primary,
+        input:not([type="file"]) {
+            height: 3rem;
+        }
+
+        .otp-input {
+            border: none;
+            background: #9e9e9e1f;
+            border-radius: 6px;
+        }
+
+        .form-label.arabic,
+        input {
+            font-size: 16px;
+        }
+
+        .is-invalid {
+            border: 2px solid !important;  
+            border-radius: 5px !important;
+            border-color: var(--tblr-form-invalid-border-color) !important;
+        }
+
+        .is-valid {
+            border: 2px solid !important;  
+            border-radius: 5px !important;
+            border-color: var(--tblr-form-valid-border-color) !important;
+        }
+    </style>
 
 
 </head>

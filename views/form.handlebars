@@ -1,0 +1,206 @@
+<div class="page">
+
+  <div class="container col-12 col-lg-6 py-4" id="entry-container" entry-id="{{data.entryId}}">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <a href="/logout">تسجيل الخروج</a>
+
+      <div class="dropdown" dir="rtl">
+        <button class="btn btn-outline w-100" type="button" id="dropdownMenuButton" 
+          data-bs-toggle="dropdown" aria-expanded="false">
+          تحميلات النماذج الأخرى
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+          {{#each data.uploads}}
+          <li>
+            <a class="dropdown-item" href="/orphan/{{this._id}}">
+              {{#if this.name}}
+              {{this.name}}
+              {{else if this.photo}}
+              {{this.photo}}
+              {{else if this.orphanId}}
+              {{this.orphanId}}
+              {{else}}
+              رقم الدخول {{@index}}
+              {{/if}}
+            </a>
+          </li>
+          {{/each}}
+          <li><a class="dropdown-item text-primary" href="/new-orphan">إنشاء جديد</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h2 text-center mb-4"></h2>
+        <div class="mb-3" {{#if data.rtl}}dir="rtl" {{/if}}>
+          {{{data.formFields}}}
+        </div>
+        <div class="form-footer">
+          <button class="btn btn-primary w-100" onclick="saveForm(this)">إنقاذ اليتيم</button>
+        </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+
+  const uploadImage = function (elem) {
+    const fileInput = $(elem).find("input[type=file]");
+    fileInput[0].click();
+    fileInput.off('change').on('change', function () {
+      let inputName = $(this).attr("name");
+      if (event.target.files && event.target.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          $(elem).closest(".image-upload").find("img").attr("src", e.target.result);
+        };
+
+        reader.readAsDataURL(event.target.files[0]);
+
+        var formData = new FormData();
+        formData.append('image', event.target.files[0]);
+        formData.append('folderName', `akeurope/akeurope_forms/orphan-form/${inputName}`);
+        formData.append('fieldName', $(this).attr("name"));
+        formData.append('entryId', $('#entry-container').attr("entry-id"));
+
+        $(elem).closest(".image-upload").find(".btn").html(`<span class="spinner-border spinner-border-sm" role="status"></span>`);
+
+        $.ajax({
+          url: '/upload-image',
+          type: 'POST',
+          data: formData,
+          contentType: false,
+          processData: false,
+          success: async function (response) {
+            await saveField(inputName, response.cloudinaryUrl);
+            $(elem).closest('.image-controller').addClass('is-valid');
+            $(elem).closest(".image-upload").find(".cloudinaryUrl").val(response.cloudinaryUrl);
+            $(elem).closest(".image-upload").find(".btn").html(`
+                <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
+              `);
+            $(elem).closest(".image-upload").find("img").attr("src", response.cloudinaryUrl);
+          },
+          error: function (error) {
+            $(elem).closest('.image-controller').addClass('is-invalid');
+            $(elem).closest(".image-upload").find(".btn").html(`
+                <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+              `);
+            alert("Error uploading image:", error.responseText);
+          }
+        });
+      }
+    });
+  }
+
+  $('[type=file]').on('change', function () {
+    const file = this.files[0];
+    const fieldName = $(this).attr('name');
+    const elem = $(this);
+
+    if (file) {
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fieldName', fieldName);
+
+      $.ajax({
+        url: '/upload-file',
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: async function (response) {
+          await saveField(fieldName, response);
+          $(elem).next(".field-control").val(response);
+          $(elem).addClass('is-valid');
+        },
+        error: function (xhr, status, error) {
+          console.error('Error uploading file:', error);
+          $(elem).addClass('is-invalid');
+          alert(error.responseText);
+        },
+      });
+    }
+
+  });
+
+  const saveField = async function (fieldName, string) {
+
+    if (!fieldName || !string) return alert('field name and string is missing');
+
+    const entryId = $('#entry-container').attr('entry-id');
+    await $.ajax({
+      url: `/save-field/${entryId}`,
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({ fieldName, string }),
+      success: response => {
+        console.log(response);
+        console.log('field saved successfully');
+      },
+      error: error => {
+        console.log(error.responseText);
+        alert(error.responseText);
+      }
+    })
+  }
+
+  const saveForm = function (elem) {
+    let isValid = true;
+
+    $(elem).removeClass('bg-danger');
+    $(elem).removeClass('bg-success');
+    $(elem).siblings('.alert').remove();
+    $('#entry-container').find('.is-valid').removeClass('is-valid');
+    $('#entry-container').find('.is-invalid').removeClass('is-invalid');
+
+    $('#entry-container .field-control').each(async function () {
+      const fieldName = $(this).attr('name');
+      const fieldValue = $(this).val() || $(this).find('[type=radio]:checked').val();
+
+      if (fieldValue) {
+        await saveField(fieldName, fieldValue);
+        $(this).siblings('.form-control').addClass('is-valid');
+        $(this).addClass('is-valid');
+        $(this).closest('.image-controller').addClass('is-valid');
+      } else {
+        isValid = false;
+        $(this).siblings('.form-control').addClass('is-invalid');
+        $(this).addClass('is-invalid');
+        $(this).closest('.image-controller').addClass('is-invalid');
+      }
+    });
+
+    if (!isValid) {
+      $(elem).addClass('bg-danger');
+      $(elem).after(``);
+      $(elem).after(`
+            <div class="alert alert-danger border-end mt-4" dir="rtl" role="alert">
+              <h4 class="alert-title">الرجاء إدخال كافة حقول النموذج</h4>
+            </div>`);
+    } else {
+      $(elem).addClass('bg-success');
+      $(elem).after(`
+            <div class="alert alert-success mt-4" dir="rtl" role="alert">
+              <h4 class="alert-title">شكرا لك على تقديم النموذج</h4>
+            </div>`);
+    }
+
+  };
+
+  $(document).on('input change keyup', 'input, .form-control, field-control, [type="radio"]', function () {
+    $(this).closest('.field-control').removeClass('is-invalid').removeClass('is-valid');
+    $(this).siblings('.form-control, .field-control').removeClass('is-invalid');
+    $(this).removeClass('is-invalid');
+    $(this).closest('.image-controller').removeClass('is-invalid');
+    $(this).siblings('.form-control, .field-control').removeClass('is-valid');
+    $(this).removeClass('is-valid');
+    $(this).closest('.image-controller').removeClass('is-valid');
+  })
+
+</script>

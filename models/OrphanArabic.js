@@ -1,15 +1,12 @@
 const mongoose = require('mongoose');
 
 const orphanArabicSchema = new mongoose.Schema({
-    ser: {
-        type: Number,
-    },
     name: {
         type: String,
     },
     gender: {
         type: String,
-        enum: ['ذكر', 'أنثى', 'آخر']
+        enum: ['ذكر', 'أنثى', 'آخر'],
     },
     orphanId: {
         type: Number,
@@ -51,10 +48,26 @@ const orphanArabicSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
-    photo: {
+    photoOfOrphan: {
         type: String,
-    }
+        priority: 1,
+        fieldType: 'photo',
+    },
+    birthCertificate: {
+        type: String,
+        priority: 1,
+        fieldType: 'file',
+    },
+    fatherDeathCertificate: {
+        type: String,
+        priority: 1,
+        fieldType: 'file',
+    },
+    uploadedBy: {
+        actorType: { type: String, required: true, priority: 0 },
+        actorId: { type: String, required: true, priority: 0 },
+        actorUrl: { type: String, required: true, priority: 0 },
+    },
 });
 
-// Export the Arabic orphan model
 module.exports = mongoose.model('OrphanArabic', orphanArabicSchema);
