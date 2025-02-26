@@ -12,12 +12,12 @@
         <div class="form-container" id="container-send-code" class="d-none">
 
           <div class="mb-3">
-            <label class="form-label">كيف نتصل بك؟</label>
-            <input id="name" type="text" class="text-center form-control" placeholder="السمعة" autocomplete="off" required>
+            <label class="form-label">اسم الشخص</label>
+            <input id="name" type="text" class="text-center form-control" placeholder="الاسم" autocomplete="off" required>
           </div>
 
           <div class="mb-3">
-            <label class="form-label">أدخل رقم هاتفك لتحصل على 6 أرقام لمرة واحدة</label>
+            <label class="form-label">ادخل رقم الهاتف</label>
             <input id="tel" type="tel" class="text-center form-control" placeholder="+9705XXXXXXXX" autocomplete="off" required>
           </div>
 
@@ -29,7 +29,7 @@
         <div class="form-container d-none" id="container-verify-code">
 
           <div class="mb-3">
-            <label class="form-label mb-3">أدخل 6 أرقام لمرة واحدة المرسلة إلى رقم هاتفك</label>
+            <label class="form-label mb-3">ادخل رمز التحقق الذي تم ارساله الى هاتفك و المكون من 6 ارقام</label>
             <div class="form-control border-0 shadow-none p-0">
               <div class="row g-2" dir="ltr">
                 <div class="col-2">
@@ -157,7 +157,7 @@
       data: JSON.stringify({ code, name }),
       success: function (response) {
         $(elem).after('.alert-danger').remove();
-        window.location.href = '/new-orphan';
+        window.location.href = '/';
       },
       error: function (xhr, status, error) {
         $(elem).html(currentBtnHTML);

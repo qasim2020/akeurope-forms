@@ -95,7 +95,7 @@ app.get('/new-orphan', async (req, res) => {
     try {
         if (!req.session.verified) return res.redirect('/');
         const uploadsCount = await OrphanArabic.countDocuments({ 'uploadedBy.actorId': req.session.user._id });
-        if (uploadsCount > req.session.user.maxUploads)
+        if (uploadsCount >= req.session.user.maxUploads)
             throw new Error('You have reached your limit. Please contact admins for changes.');
         const entryId = new mongoose.Types.ObjectId();
         const entry = new OrphanArabic({
@@ -109,7 +109,10 @@ app.get('/new-orphan', async (req, res) => {
         await entry.save();
         res.redirect(`/orphan/${entryId}`);
     } catch (error) {
-        res.status(404).send(error.toString());
+        res.render('error', {
+            layout: 'main',
+            error: error.message,
+        });
     }
 });
 
@@ -126,15 +129,26 @@ app.get('/orphan/:entryId', async (req, res) => {
                 formFields,
                 rtl: true,
                 entryId: entry._id,
+                remaining: req.session.user.maxUploads - uploads.length
             },
         });
     } catch (error) {
-        res.status(400).send(error.message);
+        res.render('error', {
+            layout: 'main',
+            error: error.message,
+        });
     }
 });
 
-app.get('/', (req, res) => {
-    res.render('verify', { layout: 'main' });
+app.get('/', async (req, res) => {
+    if (!req.session.user) return res.render('verify', { layout: 'main' });
+
+    const latestOrphan = await OrphanArabic.findOne({ 'uploadedBy.actorId': req.session.user._id })
+        .sort({ updatedAt: -1 });
+
+    if (!latestOrphan) return res.redirect(`/new-orphan`);
+
+    res.redirect(`/orphan/${latestOrphan._id}`);
 });
 
 app.post('/send-code', async (req, res) => {

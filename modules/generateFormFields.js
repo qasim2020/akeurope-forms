@@ -1,17 +1,19 @@
 const translations = {
     name: 'اسم اليتيم',
-    gender: 'الجنس',
-    orphanId: 'رقم اليتيم',
-    dateOfBirth: 'تاريخ الميلاد',
-    familyNumber: 'عدد أفراد الأسرة',
+    gender: 'جنس اليتيم',
+    orphanId: 'رقم هوية اليتيم',
+    photoOfGuardianId: 'صورة هوية الوصي على اليتيم',
+    dateOfBirth: 'تاريخ ميلاد اليتيم',
+    familyNumber: 'عدد افراد الاسرة',
     fatherDateOfDeath: 'تاريخ وفاة الأب',
-    guardianName: 'اسم الوصي',
-    guardianId: 'رقم الوصي',
-    phoneNo1: 'رقم الهاتف 1',
-    phoneNo2: 'رقم الهاتف 2',
+    guardianName: 'اسم الوصى على اليتيم رباعي',
+    guardianId: 'رقم هوية الوصي',
+    phoneNo1: '1. رقم تواصل ',
+    phoneNo2: '2. رقم واتساب',
     displacementGov: 'محافظة النزوح',
     displacementArea: 'منطقة النزوح',
-    orphanAddress: 'عنوان اليتيم',
+    orphanNewAddress: 'عنوان اليتيم الحالي',
+    orphanOldAddress: 'عنوان اليتيم السابق',
     relationToTheOrphan: 'صلة القرابة باليتيم',
     dateOfRegistration: 'تاريخ التسجيل',
     photoOfOrphan: 'صورة اليتيم',
@@ -104,7 +106,6 @@ function createInputField(key, field, useTranslation, value = '') {
     </div>`;
 }
 
-
 function createFileInputField(key, field, useTranslation, value = '') {
     const label = useTranslation ? translations[key] || key : key;
     const isImage = value && /\.(jpeg|jpg|png|webp|tiff)$/i.test(value);
@@ -125,7 +126,7 @@ function createFileInputField(key, field, useTranslation, value = '') {
 
 function generateFormFields(schema, orphanData = {}, useTranslation = false) {
     const fields = [];
-    const forbidden = ['_id', '__v', 'phoneNo1', 'dateOfRegistration'];
+    const forbidden = ['_id', '__v', 'dateOfRegistration', 'createdAt', 'updatedAt'];
 
     const fieldEntries = Object.keys(schema.paths)
         .filter((key) => !(forbidden.includes(key) || schema.paths[key].options.priority === 0))
@@ -158,7 +159,7 @@ function generateFormFields(schema, orphanData = {}, useTranslation = false) {
             key: field.key,
             html: field.html.replace(
                 /<label[^>]*>(.*?)<\/label>/,
-                `<label for="${field.key}" class="${labelClass}">${labelWithSerial}</label>`,
+                `<label for="${field.key}" class="${labelClass} pb-2">${labelWithSerial}</label>`,
             ),
         };
     });
