@@ -280,8 +280,8 @@ const shortenFileName = function(string) {
         return string;
     }
     const start = string.slice(0, 5); 
-    const end = string.slice(-4);    
-    return `${start}...${end}`;       
+    const end = string.slice(-15);    
+    return `...${end}`;       
 }
 
 module.exports = {

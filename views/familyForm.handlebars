@@ -14,7 +14,7 @@
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
             {{#each data.uploads}}
             <li>
-              <a class="dropdown-item" href="/orphan/{{this._id}}">
+              <a class="dropdown-item" href="/get-family/{{this._id}}">
                 {{#if this.name}}
                 {{this.name}}
                 {{else}}
@@ -27,7 +27,7 @@
         </div>
 
         {{#if (gt data.remaining 0)}}
-        <a href="/new-orphan" class="btn btn-primary-outline border-1 border-blue ms-2 w-100" type="button">
+        <a href="/new-family" class="btn btn-primary-outline border-1 border-blue ms-2 w-100" type="button">
           <span class="d-none d-md-inline-block">اضافة يتيم جديد</span>
           <span class="d-inline-block d-md-none"><i class="ti ti-plus"></i></span>
         </a>
@@ -58,7 +58,7 @@
   </div>
 </div>
 
-
+<script src="/static/form.js"></script>
 <script>
 
   const uploadImage = function (elem) {
@@ -76,7 +76,7 @@
 
         var formData = new FormData();
         formData.append('image', event.target.files[0]);
-        formData.append('folderName', `akeurope/akeurope_forms/orphan-form/${inputName}`);
+        formData.append('folderName', `akeurope/akeurope_forms/family-form/${inputName}`);
         formData.append('fieldName', $(this).attr("name"));
         formData.append('entryId', $('#entry-container').attr("entry-id"));
 
@@ -109,45 +109,13 @@
     });
   }
 
-  $('[type=file]').on('change', function () {
-    const file = this.files[0];
-    const fieldName = $(this).attr('name');
-    const elem = $(this);
-
-    if (file) {
-
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('fieldName', fieldName);
-
-      $.ajax({
-        url: '/upload-file',
-        type: 'POST',
-        data: formData,
-        contentType: false,
-        processData: false,
-        success: async function (response) {
-          await saveField(fieldName, response);
-          $(elem).next(".field-control").val(response);
-          $(elem).addClass('is-valid');
-        },
-        error: function (xhr, status, error) {
-          console.error('Error uploading file:', error);
-          $(elem).addClass('is-invalid');
-          alert(error.responseText);
-        },
-      });
-    }
-
-  });
-
   const saveField = async function (fieldName, string) {
 
     if (!fieldName || !string) return alert('field name and string is missing');
 
     const entryId = $('#entry-container').attr('entry-id');
     await $.ajax({
-      url: `/save-field/${entryId}`,
+      url: `/update-family-field/${entryId}`,
       method: 'POST',
       contentType: 'application/json',
       data: JSON.stringify({ fieldName, string }),
@@ -157,62 +125,29 @@
       },
       error: error => {
         console.log(error.responseText);
-        alert(error.responseText);
+        throw new Error(error.responseText);
       }
     })
   }
 
-  const saveForm = function (elem) {
-    let isValid = true;
+  const validateField = async function (fieldName, string) {
+    if (!fieldName || !string) return alert('field name and string is missing');
+    const entryId = $('#entry-container').attr('entry-id');
 
-    $(elem).removeClass('bg-danger');
-    $(elem).removeClass('bg-success');
-    $(elem).siblings('.alert').remove();
-    $('#entry-container').find('.is-valid').removeClass('is-valid');
-    $('#entry-container').find('.is-invalid').removeClass('is-invalid');
-
-    $('#entry-container .field-control').each(async function () {
-      const fieldName = $(this).attr('name');
-      const fieldValue = $(this).val() || $(this).find('[type=radio]:checked').val();
-
-      if (fieldValue) {
-        await saveField(fieldName, fieldValue);
-        $(this).siblings('.form-control').addClass('is-valid');
-        $(this).addClass('is-valid');
-        $(this).closest('.image-controller').addClass('is-valid');
-      } else {
-        isValid = false;
-        $(this).siblings('.form-control').addClass('is-invalid');
-        $(this).addClass('is-invalid');
-        $(this).closest('.image-controller').addClass('is-invalid');
+    await $.ajax({
+      url: `/validate-family-field/${entryId}`,
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({ fieldName, string }),
+      success: response => {
+        console.log(response);
+      },
+      error: error => {
+        console.log(error);
+        console.log(error.responseText);
+        throw new Error(error.responseText);
       }
-    });
-
-    if (!isValid) {
-      $(elem).addClass('bg-danger');
-      $(elem).after(``);
-      $(elem).after(`
-            <div class="alert alert-danger border-end mt-4" dir="rtl" role="alert">
-              <h4 class="alert-title">الرجاء إدخال كافة حقول النموذج</h4>
-            </div>`);
-    } else {
-      $(elem).addClass('bg-success');
-      $(elem).after(`
-            <div class="alert alert-success mt-4" dir="rtl" role="alert">
-              <h4 class="alert-title">شكرا لك على تقديم النموذج</h4>
-            </div>`);
-    }
-
+    })
   };
-
-  $(document).on('input change keyup', 'input, .form-control, field-control, [type="radio"]', function () {
-    $(this).closest('.field-control').removeClass('is-invalid').removeClass('is-valid');
-    $(this).siblings('.form-control, .field-control').removeClass('is-invalid');
-    $(this).removeClass('is-invalid');
-    $(this).closest('.image-controller').removeClass('is-invalid');
-    $(this).siblings('.form-control, .field-control').removeClass('is-valid');
-    $(this).removeClass('is-valid');
-    $(this).closest('.image-controller').removeClass('is-valid');
-  })
 
 </script>

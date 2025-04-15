@@ -1,47 +1,47 @@
 const cloudinary = require('cloudinary').v2;
 const File = require('../models/File');
 const fs = require('fs').promises;
-const path = require('path')
+const path = require('path');
 
 require('dotenv').config();
 
-cloudinary.config({ 
+cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
+    api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-exports.uploadImage = async(req,res) => {
+exports.uploadImage = async (req, res) => {
     try {
         const imageFile = req.file;
-    
+
         if (!imageFile || !imageFile.mimetype.startsWith('image/')) {
             return res.status(400).json({ message: 'Only image files are allowed.' });
         }
 
         const { fieldName, folderName, entryId } = req.body;
-    
+
         const imageBase64 = `data:${imageFile.mimetype};base64,${imageFile.buffer.toString('base64')}`;
-    
+
         const customPublicId = `${entryId}-${fieldName}`;
-    
-        await cloudinary.uploader.destroy(customPublicId, { resource_type: 'image' })
-            .then(result => console.log("Deleted existing image:", result))
-            .catch(error => console.error("Error deleting existing image (if any):", error));
+
+        await cloudinary.uploader
+            .destroy(customPublicId, { resource_type: 'image' })
+            .then((result) => console.log('Deleted existing image:', result))
+            .catch((error) => console.error('Error deleting existing image (if any):', error));
 
         const uploadResult = await cloudinary.uploader.upload(imageBase64, {
             folder: folderName,
             public_id: customPublicId,
-            resource_type: 'image',  
+            resource_type: 'image',
         });
-    
+
         res.json({ cloudinaryUrl: uploadResult.secure_url });
-    
     } catch (error) {
         console.error('Error uploading image to Cloudinary:', error);
         res.status(500).json({ message: 'Failed to upload image' });
     }
-}
+};
 
 exports.uploadFile = async (req, res) => {
     try {
@@ -75,7 +75,7 @@ exports.uploadFile = async (req, res) => {
 exports.file = async (req, res) => {
     try {
         let file;
-        file = await File.findById(req.params.fileId).lean();
+        file = await File.findOne({ _id: req.params.fileId, 'uploadedBy.actorId': req.session.user._id }).lean();
 
         if (!file) {
             return res.status(404).send({ error: 'File not found' });

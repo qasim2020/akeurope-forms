@@ -1,10 +1,16 @@
 const mongoose = require('mongoose');
 
-const orphanArabicSchema = new mongoose.Schema(
+const familyArabicSchema = new mongoose.Schema(
     {
     name: {
         type: String,
         priority: 1,
+    },
+    passportNumber: {
+        type: String,
+        priority: 2,
+        unique: true,
+        sparse: true,
     },
     gender: {
         type: String,
@@ -12,9 +18,6 @@ const orphanArabicSchema = new mongoose.Schema(
     },
     orphanId: {
         type: Number,
-        priority: 1,
-        unique: true,
-        sparse: true,
     },
     dateOfBirth: {
         type: Date,
@@ -58,7 +61,7 @@ const orphanArabicSchema = new mongoose.Schema(
     },
     photoOfOrphan: {
         type: String,
-        priority: 2,
+        priority: 3,
         fieldType: 'photo',
     },
     photoOfGuardianId: {
@@ -87,4 +90,4 @@ const orphanArabicSchema = new mongoose.Schema(
 }
 );
 
-module.exports = mongoose.model('OrphanArabic', orphanArabicSchema);
+module.exports = mongoose.model('FamilyArabic', familyArabicSchema);

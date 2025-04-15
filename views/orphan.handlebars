@@ -1,0 +1,196 @@
+<div class="page page-center">
+  <div class="container container-tight py-4">
+    <div class="text-center mb-4">
+      <a href="." class="navbar-brand navbar-brand-autodark">
+        <img src="/static/images/logo-dark.png" height="64" alt="Tabler" class="navbar-brand-image">
+      </a>
+    </div>
+    <div class="card card-md" dir="rtl">
+      <div class="card-body">
+        <h2 class="h2 text-center mb-4">التحقق من الهاتف</h2>
+
+        <div class="form-container" id="container-send-code" class="d-none">
+
+          <div class="mb-3">
+            <label class="form-label">ما اسمك؟</label>
+            <input id="name" type="text" class="text-center form-control" placeholder="الاسم" autocomplete="off" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">ادخل رقم الهاتف</label>
+            <input id="tel" type="tel" class="text-center form-control" placeholder="+9705XXXXXXXX" autocomplete="off" required>
+          </div>
+
+          <div class="form-footer">
+            <button id="send-code" class="btn btn-primary w-100" onclick="sendCode(this)">إرسال الرمز</button>
+          </div>
+        </div>
+
+        <div class="form-container d-none" id="container-verify-code">
+
+          <div class="mb-3">
+            <label class="form-label mb-3">ادخل رمز التحقق الذي تم ارساله الى هاتفك و المكون من 6 ارقام</label>
+            <div class="form-control border-0 shadow-none p-0">
+              <div class="row g-2" dir="ltr">
+                <div class="col-2">
+                  <input type="text" class="w-100 text-center otp-input" maxlength="1" pattern="\d*"
+                    inputmode="numeric">
+                </div>
+                <div class="col-2">
+                  <input type="text" class="w-100 text-center otp-input" maxlength="1" pattern="\d*"
+                    inputmode="numeric">
+                </div>
+                <div class="col-2">
+                  <input type="text" class="w-100 text-center otp-input" maxlength="1" pattern="\d*"
+                    inputmode="numeric">
+                </div>
+                <div class="col-2">
+                  <input type="text" class="w-100 text-center otp-input" maxlength="1" pattern="\d*"
+                    inputmode="numeric">
+                </div>
+                <div class="col-2">
+                  <input type="text" class="w-100 text-center otp-input" maxlength="1" pattern="\d*"
+                    inputmode="numeric">
+                </div>
+                <div class="col-2">
+                  <input type="text" class="w-100 text-center otp-input" maxlength="1" pattern="\d*"
+                    inputmode="numeric">
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button id="verify-code" class="btn btn-primary w-100" onclick="verifyCode(this)">تسجيل الدخول</button>
+
+            <div class="text-center mt-3 cursor-pointer fs-4">
+              <a onclick="showSendCode(this)" class="">
+                <i class="ti ti-arrow-left"></i>
+                Back
+              </a>
+            </div>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+
+  $('input').on('keypress', function (e) {
+    if (e.which === 13) {
+      const isSendCodeContainer = $('#container-send-code').hasClass('d-none') === false;
+      const isVerifyCodeContainer = $('#container-verify-code').hasClass('d-none') === false;
+      if (isSendCodeContainer) {
+        $('#send-code').click();
+      } 
+      if (isVerifyCodeContainer) {
+        $('#verify-code').click();
+      }
+    }
+});
+
+
+  $('.otp-input').on('input', function () {
+    $(this).closest('.col-2').next('.col-2').find('.otp-input').focus()
+  });
+
+  const showSendCode = function (elem) {
+    $('#container-send-code').removeClass('d-none').find('.alert').remove();
+    $('#container-verify-code').addClass('d-none').find('.alert').remove();
+  }
+
+  const sendCode = function (elem) {
+    const phone = $('#tel').val();
+    const name = $('#name').val();
+
+    $(elem).closest('.form-container').find('.alert').remove();
+    $(elem).closest('.form-container').find('.invalid-feedback').remove();
+    $(elem).closest('.form-container').find('.is-invalid').removeClass('is-invalid');
+
+    if (!phone || !name) {
+      $('#tel').addClass('is-invalid');
+      $('#name').addClass('is-invalid');
+      return;
+    }
+
+    let currentBtnHTML = $(elem).html();
+    $(elem).html(`<span class="spinner-border spinner-border-sm me-2" role="status"></span>`);
+
+    $.ajax({
+      url: '/send-code',
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({ phone }),
+      success: function (response) {
+        $(elem).html(currentBtnHTML);
+        $('#container-send-code').addClass('d-none');
+        $('#container-verify-code').removeClass('d-none');
+      },
+      error: function (xhr, status, error) {
+        $(elem).html(currentBtnHTML);
+        $(elem).after(`
+            <div class="alert alert-danger mt-4" role="alert">
+              <h4 class="alert-title">لا يمكن إرسال الرمز</h4>
+              <div class="text-secondary">${xhr.responseText}</div>
+            </div>`);
+      }
+    });
+  }
+
+  const verifyCode = function (elem) {
+    const code = $('.otp-input').map(function () {
+      return $(this).val();
+    }).get().join('');
+    const name = $('#name').val();
+
+    $(elem).closest('.form-container').find('.alert').remove();
+    $(elem).closest('.form-container').find('.invalid-feedback').remove();
+    $(elem).closest('.form-container').find('.is-invalid').removeClass('is-invalid');
+
+    if (!code || code.length != 6) {
+      $('.otp-input').closest('.form-control').addClass('is-invalid');
+      $(elem).after(`
+            <div class="alert alert-danger mt-4" role="alert">
+              <h4 class="alert-title">يرجى ملء الرمز المكون من 6 أرقام</h4>
+            </div>`);
+      return;
+    }
+
+    let currentBtnHTML = $(elem).html();
+    $(elem).html(`<span class="spinner-border spinner-border-sm me-2" role="status"></span>`);
+
+    $.ajax({
+      url: '/verify-code',
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({ code, name }),
+      success: function (response) {
+        $(elem).after('.alert-danger').remove();
+        window.location.href = '/orphan';
+      },
+      error: function (xhr, status, error) {
+        $(elem).html(currentBtnHTML);
+        if (status != 400) {
+          $(elem).after(`
+          <div class="alert alert-danger mt-4" role="alert">
+            <h4 class="alert-title">لا يمكن إرسال الرمز</h4>
+            <div class="text-secondary">إعادة إنشاء التعليمات البرمجية</div>
+          </div>`);
+        } else {
+          $(elem).after(`
+            < div class="alert alert-danger mt-4" role = "alert" >
+              <h4 class="alert-title">لا يمكن إرسال الرمز</h4>
+              <div class="text-secondary">${xhr.responseText}</div>
+            </div >`);
+        }
+      }
+    });
+  }
+
+</script>

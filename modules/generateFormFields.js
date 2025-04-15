@@ -1,27 +1,7 @@
-const translations = {
-    name: 'اسم اليتيم',
-    gender: 'جنس اليتيم',
-    orphanId: 'رقم هوية اليتيم',
-    photoOfGuardianId: 'صورة هوية الوصي على اليتيم',
-    dateOfBirth: 'تاريخ ميلاد اليتيم',
-    familyNumber: 'عدد افراد الاسرة',
-    fatherDateOfDeath: 'تاريخ وفاة الأب',
-    guardianName: 'اسم الوصى على اليتيم رباعي',
-    guardianId: 'رقم هوية الوصي',
-    phoneNo1: '1. رقم تواصل ',
-    phoneNo2: '2. رقم واتساب',
-    displacementGov: 'محافظة النزوح',
-    displacementArea: 'منطقة النزوح',
-    orphanNewAddress: 'عنوان اليتيم الحالي',
-    orphanOldAddress: 'عنوان اليتيم السابق',
-    relationToTheOrphan: 'صلة القرابة باليتيم',
-    dateOfRegistration: 'تاريخ التسجيل',
-    photoOfOrphan: 'صورة اليتيم',
-    birthCertificate: 'شهادة الميلاد',
-    fatherDeathCertificate: 'شهادة وفاة الأب',
-};
+const File = require('../models/File');
+const { shortenFileName } = require('../modules/helpers');
 
-function createPhotoField(useTranslation, value = '') {
+function createPhotoField(useTranslation, value = '', translations) {
     const photoKey = 'photoOfOrphan';
     const photoLabel = useTranslation ? translations[photoKey] || photoKey : photoKey;
 
@@ -51,7 +31,7 @@ function createPhotoField(useTranslation, value = '') {
     `;
 }
 
-function createRadioField(key, field, useTranslation, fieldValue = '') {
+function createRadioField(key, field, useTranslation, fieldValue = '', translations) {
     const label = useTranslation ? translations[key] || key : key;
 
     const radioButtons = field.enumValues
@@ -80,7 +60,7 @@ function createRadioField(key, field, useTranslation, fieldValue = '') {
     </div>`;
 }
 
-function createInputField(key, field, useTranslation, value = '') {
+function createInputField(key, field, useTranslation, value = '', translations) {
     const label = useTranslation ? translations[key] || key : key;
     let inputType;
 
@@ -100,15 +80,40 @@ function createInputField(key, field, useTranslation, value = '') {
             break;
     }
 
-    return `<div class="mb-3">
-        <label for="${key}" class="form-label">${label}</label>
-        <input type="${inputType}" class="form-control field-control" id="${key}" name="${key}" value="${value}" required>
-    </div>`;
+    const isUniqueField = field.options?.unique || false;
+
+    if (isUniqueField) {
+        if (value) {
+           return `<div class="mb-3">
+                <label for="${key}" class="form-label">${label}</label>
+                <div class="mb-2 text-secondary fs-5">هذا إدخال فريد. لا يمكن تغيير رقم جواز السفر بعد إضافته.</div>
+                <input is-unique=true type="${inputType}" class="form-control field-control" id="${key}" name="${key}" value="${value}" disabled>
+            </div>`; 
+        } else {
+            return `<div class="mb-3">
+                <label for="${key}" class="form-label">${label}</label>
+                <div class="mb-2 text-secondary fs-5">هذا إدخال فريد. لا يمكن تغيير رقم جواز السفر بعد إضافته.</div>
+                <input is-unique=true type="${inputType}" class="form-control field-control" id="${key}" name="${key}" required>
+            </div>`;
+        }
+    } else {
+        return `<div class="mb-3">
+            <label for="${key}" class="form-label">${label}</label>
+            <input type="${inputType}" class="form-control field-control" id="${key}" name="${key}" value="${value}" required>
+        </div>`;
+    }
+
+
 }
 
-function createFileInputField(key, field, useTranslation, value = '') {
+async function createFileInputField(key, field, useTranslation, value = '', translations) {
     const label = useTranslation ? translations[key] || key : key;
     const isImage = value && /\.(jpeg|jpg|png|webp|tiff)$/i.test(value);
+
+    let file = null;
+    if (value) {
+        file = await File.findById(value).lean();
+    }
 
     return `<div class="mb-3">
                 <label for="${key}" class="form-label">${label}</label>
@@ -116,39 +121,46 @@ function createFileInputField(key, field, useTranslation, value = '') {
                     accept="image/jpeg,image/png,image/webp,image/tiff,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
                 <input type="text" class="form-control field-control d-none" name="${key}" value="${value}"/>
                 ${
-                    value
-                        ? `<a href="/file/${value}" class="btn btn-outline-primary mt-2" download>Download Uploaded File</a>`
+                    file
+                        ? `
+                        <a href="/file/${file._id}" class="btn btn-outline-primary mt-2 d-block fw-bold" download>
+                            <span class="d-none d-md-inline-block">Download ${file.name}</span>
+                            <span class="d-inline-block d-md-none">Download ${shortenFileName(file.name)}</span>
+                        </a>`
                         : ''
                 }
                 ${isImage ? `<img src="/file/${value}" class="img-thumbnail mt-2" style="max-width: 200px;">` : ''}
             </div>`;
 }
 
-function generateFormFields(schema, orphanData = {}, useTranslation = false) {
+async function generateFormFields(schema, orphanData = {}, useTranslation = false, translations) {
     const fields = [];
     const forbidden = ['_id', '__v', 'dateOfRegistration', 'createdAt', 'updatedAt'];
 
-    const fieldEntries = Object.keys(schema.paths)
-        .filter((key) => !(forbidden.includes(key) || schema.paths[key].options.priority === 0))
-        .map((key) => {
-            const field = schema.paths[key];
-            const existingValue = orphanData[key] || '';
-            let fieldHtml;
-            if (field.options.fieldType === 'file') {
-                fieldHtml = createFileInputField(key, field, useTranslation, existingValue);
-            } else if (field.options.fieldType === 'photo') {
-                fieldHtml = createPhotoField(useTranslation, existingValue);
-            } else {
-                fieldHtml =
-                    field.enumValues && field.enumValues.length
-                        ? createRadioField(key, field, useTranslation, existingValue)
-                        : createInputField(key, field, useTranslation, existingValue);
-            }
+    const fieldEntries = await Promise.all(
+        Object.keys(schema.paths)
+            .filter((key) => !(forbidden.includes(key) || schema.paths[key].options.priority === 0))
+            .map(async (key) => {
+                const field = schema.paths[key];
+                const existingValue = orphanData[key] || '';
+                let fieldHtml;
 
-            return { key, html: fieldHtml, priority: field.options.priority || 0 };
-        });
+                if (field.options.fieldType === 'file') {
+                    fieldHtml = await createFileInputField(key, field, useTranslation, existingValue, translations);
+                } else if (field.options.fieldType === 'photo') {
+                    fieldHtml = createPhotoField(useTranslation, existingValue, translations);
+                } else {
+                    fieldHtml =
+                        field.enumValues && field.enumValues.length
+                            ? createRadioField(key, field, useTranslation, existingValue, translations)
+                            : createInputField(key, field, useTranslation, existingValue, translations);
+                }
 
-    fieldEntries.sort((a, b) => b.priority - a.priority);
+                return { key, html: fieldHtml, priority: field.options.priority || 1000 };
+            }),
+    );
+
+    fieldEntries.sort((a, b) => a.priority - b.priority);
 
     const sortedFields = fieldEntries.map((field, index) => {
         const labelWithSerial = useTranslation
