@@ -1,8 +1,7 @@
 const File = require('../models/File');
 const { shortenFileName } = require('../modules/helpers');
 
-function createPhotoField(useTranslation, value = '', translations) {
-    const photoKey = 'photoOfOrphan';
+function createPhotoField(photoKey, useTranslation, value = '', translations) {
     const photoLabel = useTranslation ? translations[photoKey] || photoKey : photoKey;
 
     return `
@@ -84,15 +83,15 @@ function createInputField(key, field, useTranslation, value = '', translations) 
 
     if (isUniqueField) {
         if (value) {
-           return `<div class="mb-3">
+            return `<div class="mb-3">
                 <label for="${key}" class="form-label">${label}</label>
-                <div class="mb-2 text-secondary fs-5">هذا إدخال فريد. لا يمكن تغيير رقم جواز السفر بعد إضافته.</div>
+                <div class="mb-3 text-secondary fs-4">هذا إدخال فريد. لا يمكن تغيير رقم جواز السفر بعد إضافته.</div>
                 <input is-unique=true type="${inputType}" class="form-control field-control" id="${key}" name="${key}" value="${value}" disabled>
-            </div>`; 
+            </div>`;
         } else {
             return `<div class="mb-3">
                 <label for="${key}" class="form-label">${label}</label>
-                <div class="mb-2 text-secondary fs-5">هذا إدخال فريد. لا يمكن تغيير رقم جواز السفر بعد إضافته.</div>
+                <div class="mb-3 text-secondary fs-4">هذا إدخال فريد. لا يمكن تغيير رقم جواز السفر بعد إضافته.</div>
                 <input is-unique=true type="${inputType}" class="form-control field-control" id="${key}" name="${key}" required>
             </div>`;
         }
@@ -102,8 +101,48 @@ function createInputField(key, field, useTranslation, value = '', translations) 
             <input type="${inputType}" class="form-control field-control" id="${key}" name="${key}" value="${value}" required>
         </div>`;
     }
+}
 
-
+async function createAttachmentsField(key, field, useTranslation, value = '', translations) {
+    const label = useTranslation ? translations[key] || key : key;
+    let btnGroups = "",
+        uploadBtnText = "";
+    if (value.length !== 0) {
+        const fileIds = value;
+        const files = await File.find({ _id: { $in: fileIds } }).lean();
+        uploadBtnText = "إضافة مرفق جديد";
+        btnGroups = files
+            .map(
+                (file) => `
+                        <div class="btn-group w-100 mb-2 px-0" role="group" dir="ltr" file-id="${file._id}">
+                            <a href="/file/${file._id}" class="btn fw-bold text-start py-3" style="flex-grow: 1;" download>
+                                <span class="d-none d-md-inline-block"> ${shortenFileName(file.name, 50)}</span>
+                                <span class="d-inline-block d-md-none"> ${shortenFileName(file.name, 20)}</span>
+                            </a>
+                            <button type="button" class="btn fw-bold py-3" style="flex: 0 0 100px;" onclick="deleteFile(this)">
+                                <i class="ti ti-trash fs-3"></i>
+                            </button>
+                        </div>
+                    `,
+            )
+            .join('');
+    } else {
+        uploadBtnText = 'انقر للتحميل';
+    }
+    return `
+    <div class="mb-3">
+        <label for="${key}" class="form-label">${label}</label>
+        <div class="attachments attachments-controller row text-center bg-secondary-lt justify-content-center d-flex align-items-center border rounded p-3 pb-2" style="margin: 0 0.5px">
+            <button class="btn btn-secondary-outline mb-2" onclick="addFile(this)">
+                <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-plus ms-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
+                ${uploadBtnText}
+            </button>
+            <input type="file" class="form-control d-none" id="${key}" name="${key}" 
+                accept="application/pdf,image/jpeg,image/png,image/webp,image/tiff">
+            <input type="text" class="form-control field-control d-none" name="${key}" value="${value}"/>
+            ${btnGroups}
+        </div>
+    </div>`;
 }
 
 async function createFileInputField(key, field, useTranslation, value = '', translations) {
@@ -133,7 +172,7 @@ async function createFileInputField(key, field, useTranslation, value = '', tran
             </div>`;
 }
 
-async function generateFormFields(schema, orphanData = {}, useTranslation = false, translations) {
+async function generateFormFields(schema, data = {}, useTranslation = false, translations) {
     const fields = [];
     const forbidden = ['_id', '__v', 'dateOfRegistration', 'createdAt', 'updatedAt'];
 
@@ -142,13 +181,15 @@ async function generateFormFields(schema, orphanData = {}, useTranslation = fals
             .filter((key) => !(forbidden.includes(key) || schema.paths[key].options.priority === 0))
             .map(async (key) => {
                 const field = schema.paths[key];
-                const existingValue = orphanData[key] || '';
+                const existingValue = (data && data[key]) || '';
                 let fieldHtml;
 
-                if (field.options.fieldType === 'file') {
+                if (field.options.fieldType === 'files') {
+                    fieldHtml = await createAttachmentsField(key, field, useTranslation, existingValue, translations);
+                } else if (field.options.fieldType === 'file') {
                     fieldHtml = await createFileInputField(key, field, useTranslation, existingValue, translations);
                 } else if (field.options.fieldType === 'photo') {
-                    fieldHtml = createPhotoField(useTranslation, existingValue, translations);
+                    fieldHtml = createPhotoField(key, useTranslation, existingValue, translations);
                 } else {
                     fieldHtml =
                         field.enumValues && field.enumValues.length

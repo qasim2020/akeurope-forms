@@ -52,9 +52,9 @@ exports.uploadFile = async (req, res) => {
         }
 
         const file = new File({
-            name: fileMulter.filename,
+            name: fileMulter.originalname,
             size: fileMulter.size / 1000,
-            path: `/uploads/${fileMulter.filename}`,
+            path: fileMulter.filename,
             mimeType: fileMulter.mimetype,
             uploadedBy: {
                 actorType: 'user',
@@ -72,6 +72,45 @@ exports.uploadFile = async (req, res) => {
     }
 };
 
+exports.deleteFile = async (req, res) => {
+    try {
+        let file;
+        file = await File.findOne({ _id: req.params.fileId, 'uploadedBy.actorId': req.session.user._id }).lean();
+
+        if (!file) {
+            return res.status(404).send({ error: 'File not found' });
+        }
+
+        const dir = path.join(__dirname, process.env.UPLOADS_DIR);
+        const filePath = path.join(dir, file.path);
+        await fs.unlink(filePath);
+
+        await File.deleteOne({_id: req.params.fileId});
+
+        res.status(200).send('File deleted successfully!');
+    } catch (error) {
+        console.log(error);
+        res.status(500).send(error.message || error.toString());
+    }
+};
+
+exports.fileData = async (req, res) => {
+    try {
+        let file;
+        file = await File.findOne({ _id: req.params.fileId, 'uploadedBy.actorId': req.session.user._id }).lean();
+
+        if (!file) {
+            return res.status(404).send({ error: 'File not found' });
+        }
+
+        res.status(200).send(file);
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).send(error.toString());
+    }
+};
+
 exports.file = async (req, res) => {
     try {
         let file;
@@ -81,10 +120,10 @@ exports.file = async (req, res) => {
             return res.status(404).send({ error: 'File not found' });
         }
 
-        const dir = path.join(__dirname, '../');
+        const dir = path.join(__dirname, process.env.UPLOADS_DIR);
         const filePath = path.join(dir, file.path);
 
-        res.sendFile(filePath, (err) => {
+        res.download(filePath, file.name, (err) => {
             if (err) {
                 console.error('Error sending file:', err);
                 res.status(500).send({ error: 'Failed to send file' });

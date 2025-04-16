@@ -2,92 +2,69 @@ const mongoose = require('mongoose');
 
 const familyArabicSchema = new mongoose.Schema(
     {
-    name: {
-        type: String,
-        priority: 1,
+        name: {
+            type: String,
+        },
+        familyPhoto: {
+            type: String,
+            fieldType: 'photo'
+        },
+        idNumber: {
+            type: String,
+            unique: true,
+            sparse: true,
+        },
+        passportNumber: {
+            type: String,
+            unique: true,
+            sparse: true,
+        },
+        spouseName: {
+            type: String,
+        },
+        spouseIdNumber: {
+            type: String,
+            unique: true,
+            sparse: true,
+        },
+        spousePassportNumber: {
+            type: String,
+            unique: true,
+            sparse: true,
+        },
+        noOfFamilyMembers: {
+            type: Number,
+        },
+        dateOfEntryInEgypt: {
+            type: Date,
+        },
+        addressInEgypt: {
+            type: String,
+        },
+        cityInEgypt: {
+            type: String,
+            enum: ["القاهرة", "الجيزة", "القليوبية", "الدقهلية" ,"الإسكندرية" ,"شمال سيناء" ,"الشرقية", "الإسماعيلية"]
+        },
+        phoneNumber: {
+            type: String,
+        },
+        whatsappNumber: {
+            type: String,
+        },
+        attachments: {
+            type: [String],
+            fieldType: "files"
+        },
+        uploadedBy: {
+            actorType: { type: String, required: true, priority: 0 },
+            actorId: { type: String, required: true, priority: 0 },
+            actorUrl: { type: String, required: true, priority: 0 },
+        },
     },
-    passportNumber: {
-        type: String,
-        priority: 2,
-        unique: true,
-        sparse: true,
+    {
+        timestamps: true,
+        versionKey: false,
     },
-    gender: {
-        type: String,
-        enum: ['ذكر', 'أنثى'],
-    },
-    orphanId: {
-        type: Number,
-    },
-    dateOfBirth: {
-        type: Date,
-    },
-    familyNumber: {
-        type: String,
-    },
-    fatherDateOfDeath: {
-        type: Date,
-    },
-    guardianName: {
-        type: String,
-    },
-    guardianId: {
-        type: Number,
-    },
-    phoneNo1: {
-        type: String,
-    },
-    phoneNo2: {
-        type: String,
-    },
-    displacementGov: {
-        type: String,
-    },
-    displacementArea: {
-        type: String,
-    },
-    orphanNewAddress: {
-        type: String,
-    },
-    orphanOldAddress: {
-        type: String,
-    },
-    relationToTheOrphan: {
-        type: String,
-    },
-    dateOfRegistration: {
-        type: Date,
-        default: Date.now,
-    },
-    photoOfOrphan: {
-        type: String,
-        priority: 3,
-        fieldType: 'photo',
-    },
-    photoOfGuardianId: {
-        type: String,
-        priority: 4,
-        fieldType: 'file',
-    },
-    birthCertificate: {
-        type: String,
-        priority: 4,
-        fieldType: 'file',
-    },
-    fatherDeathCertificate: {
-        type: String,
-        priority: 4,
-        fieldType: 'file',
-    },
-    uploadedBy: {
-        actorType: { type: String, required: true, priority: 0 },
-        actorId: { type: String, required: true, priority: 0 },
-        actorUrl: { type: String, required: true, priority: 0 },
-    },
-},{
-    timestamps: true,
-    versionKey: false,
-}
 );
 
 module.exports = mongoose.model('FamilyArabic', familyArabicSchema);

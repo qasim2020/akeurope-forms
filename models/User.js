@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
         },
         maxUploads: {
             type: Number,
-            default: 20,
+            default: 1,
         },
         phoneNumber: {
             type: String,

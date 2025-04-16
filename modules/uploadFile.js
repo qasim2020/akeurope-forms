@@ -1,8 +1,9 @@
+require('dotenv').config();
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 
-const dir = path.join(__dirname, '../uploads');
+const dir = path.join(__dirname, process.env.UPLOADS_DIR);
 if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
 }
@@ -18,11 +19,11 @@ const uploadFile = multer({
     }),
     fileFilter: (req, file, cb) => {
         const allowedTypes = [
-            'application/pdf', // PDF
-            'image/jpeg',      // JPG
-            'image/png',       // PNG
-            'image/webp',      // WebP
-            'image/tiff',      // TIFF (sometimes used for scanned documents)
+            'application/pdf', 
+            'image/jpeg',      
+            'image/png',       
+            'image/webp',      
+            'image/tiff',      
         ];
         
         if (!allowedTypes.includes(file.mimetype)) {

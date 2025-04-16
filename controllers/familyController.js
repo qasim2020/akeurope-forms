@@ -32,6 +32,7 @@ exports.newFamily = async (req, res) => {
 exports.family = async (req, res) => {
     try {
         const entry = await FamilyArabic.findById(req.params.entryId).lean();
+        if (!entry) throw new Error('Family data not found');
         const formFields = await generateFormFields(FamilyArabic.schema, entry, true, translations);
         const uploads = await FamilyArabic.find({ 'uploadedBy.actorId': req.session.user._id }).lean();
         res.render('familyForm', {
@@ -45,7 +46,8 @@ exports.family = async (req, res) => {
             },
         });
     } catch (error) {
-        res.render('error', {
+        console.log(error);
+        res.status(400).render('error', {
             layout: 'main',
             error: error.message,
         });

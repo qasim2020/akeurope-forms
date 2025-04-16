@@ -15,8 +15,7 @@ exports.landing = async (req, res) => {
 exports.orphan = async (req, res) => {
     if (!req.session.user) return res.render('orphan', { layout: 'main' });
 
-    const latest = await OrphanArabic.findOne({ 'uploadedBy.actorId': req.session.user._id })
-        .sort({ updatedAt: -1 });
+    const latest = await OrphanArabic.findOne({ 'uploadedBy.actorId': req.session.user._id }).sort({ updatedAt: -1 });
 
     if (!latest) return res.redirect(`/new-orphan`);
 
@@ -26,34 +25,63 @@ exports.orphan = async (req, res) => {
 exports.family = async (req, res) => {
     if (!req.session.user) return res.render('family', { layout: 'main' });
 
-    const latest = await FamilyArabic.findOne({ 'uploadedBy.actorId': req.session.user._id })
-        .sort({ updatedAt: -1 });
+    const latest = await FamilyArabic.findOne({ 'uploadedBy.actorId': req.session.user._id }).sort({ updatedAt: -1 });
 
     if (!latest) return res.redirect(`/new-family`);
 
     res.redirect(`/get-family/${latest._id}`);
 };
 
+const getCode = (req) => {
+    const EXPIRY = 15 * 60 * 1000;
+    const MIN_RESEND_DELAY = 15 * 1000;
+    const currentTime = Date.now();
+
+    const previous = req.session.verification;
+
+    if (previous) {
+        const age = currentTime - previous.createdAt;
+
+        if (age < MIN_RESEND_DELAY) {
+            throw new Error('Please wait a few seconds before requesting a new code.');
+        }
+
+        if (age < EXPIRY) {
+            return previous.code;
+        }
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    req.session.verification = {
+        code,
+        createdAt: currentTime,
+    };
+
+    return code;
+};
+
 exports.sendCode = async (req, res) => {
     try {
         const { phone } = req.body;
         if (!phone) throw new Error('Phone is required');
+        const formattedPhone = phone.replace(/[^+\d]/g, '').replace(/^00/, '+');
 
-        const formattedPhone = phone.trim().replace(/\s+/g, '');
         req.session.phone = formattedPhone;
-        
-        await twilioClient.verify.v2.services(process.env.TWILIO_VERIFY_SID)
-            .verifications.create({
-                to: formattedPhone,
-                channel: 'sms'
-            });
+        const code = getCode(req);
 
-        // await client.messages.create({
-        //     from: 'whatsapp:+14155238886', // Twilio sandbox or approved WhatsApp number
-        //     to: `whatsapp:${formattedPhone}`, // Make sure this is in E.164 format
-        //     contentSid: 'HX229f5a04fd0510ce1b071852155d3e75', // Your approved WhatsApp template SID
-        //     contentVariables: JSON.stringify({ '1': '409173' }) // Replace with dynamic code or variables
-        // });
+        await twilioClient.messages.create({
+            body: `Alkhidmat Europe Authentication: \n\n${code} is your verification code. For your security, do not share this code.`,
+            from: process.env.TWILIO_NO,
+            to: formattedPhone,
+        });
+
+        await twilioClient.messages.create({
+            from: `whatsapp:${process.env.TWILIO_NO}`,
+            to: `whatsapp:${formattedPhone}`,
+            contentSid: process.env.TWILIO_TEMPLATE_ID,
+            contentVariables: JSON.stringify({ 1: code }),
+        });
 
         res.status(200).send('Code sent!');
     } catch (error) {
@@ -69,25 +97,22 @@ exports.verifyCode = async (req, res) => {
 
         if (!phone) throw new Error('Phone is required');
 
-        const verification = await twilioClient.verify.v2
-            .services(process.env.TWILIO_VERIFY_SID)
-            .verificationChecks.create({ to: phone, code });
+        const verificationCode = req.session.verification?.code;
+        if (!verificationCode) throw new Error('Code not found! Generate a new code please');
 
-        if (verification.status === 'approved') {
-            const user = await User.findOneAndUpdate(
-                { phoneNumber: phone },
-                { name, phoneNumber: phone, verified: true, maxUploads: 10 },
-                { upsert: true, new: true, lean: true },
-            );
-            req.session.verified = true;
-            req.session.user = user;
-            res.status(200).send('verified');
-        } else {
-            res.status(300).send('Invalid code, try again');
-        }
+        if (verificationCode !== code) throw new Error('Invalid code. Please make sure that the code is valid.');
+        delete req.session.verificationCode;
+        const user = await User.findOneAndUpdate(
+            { phoneNumber: phone },
+            { name, phoneNumber: phone, verified: true },
+            { upsert: true, new: true, lean: true },
+        );
+        req.session.verified = true;
+        req.session.user = user;
+        res.status(200).send('verified');
     } catch (error) {
         console.log(error);
-        res.status(error.status).send(error.message);
+        res.status(400).send(error.message);
     }
 };
 

@@ -275,12 +275,11 @@ const concat = function() {
     return Array.prototype.slice.call(arguments, 0, -1).join('');
 }
 
-const shortenFileName = function(string) {
-    if (string.length <= 10) {
+const shortenFileName = function(string, length) {
+    if (string.length <= length) {
         return string;
     }
-    const start = string.slice(0, 5); 
-    const end = string.slice(-15);    
+    const end = string.slice(-length);
     return `...${end}`;       
 }
 
