@@ -156,7 +156,6 @@
       contentType: 'application/json',
       data: JSON.stringify({ code, name }),
       success: function (response) {
-        $(elem).after('.alert-danger').remove();
         window.location.href = '/';
       },
       error: function (xhr, status, error) {
