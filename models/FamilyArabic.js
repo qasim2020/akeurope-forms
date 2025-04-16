@@ -5,10 +5,6 @@ const familyArabicSchema = new mongoose.Schema(
         name: {
             type: String,
         },
-        familyPhoto: {
-            type: String,
-            fieldType: 'photo'
-        },
         idNumber: {
             type: String,
             unique: true,
