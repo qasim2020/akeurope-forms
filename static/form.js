@@ -7,7 +7,6 @@ const deleteFile = async function (elem) {
             contentType: 'application/json',
             data: JSON.stringify({ fileId }),
         });
-        console.log(response);
         const controller = $(elem).closest('.attachments');
         $(elem).closest('.btn-group').remove();
         await saveAttachmentsInEntry(controller);
@@ -67,6 +66,12 @@ $('[type=file]').on('change', async function () {
     const file = this.files[0];
     const fieldName = $(this).attr('name');
     const elem = $(this);
+    const currentBtn = $(this).siblings('.file-upload-btn') || $(this);
+    const currentBtnHtml = currentBtn.html();
+    $(currentBtn).html(`
+        <span class="spinner-border spinner-border-sm ms-2" role="status"></span>
+        جارٍ تحميل الملف...
+        `);
 
     if (file) {
         const formData = new FormData();
@@ -95,9 +100,10 @@ $('[type=file]').on('change', async function () {
                 $(elem).next('.field-control').val(fileId);
                 $(elem).addClass('is-valid');
             }
+            $(currentBtn).html(currentBtnHtml);
         } catch (error) {
             console.error('Error uploading file:', error);
-            $(elem).addClass('is-invalid');
+            $(currentBtn).addClass('is-invalid');
             alert(error.responseText || error.message || error.toString() || 'Server Error');
         }
     };

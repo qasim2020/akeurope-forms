@@ -58,7 +58,7 @@
   </div>
 </div>
 
-<script src="/static/form.js"></script>
+<script src="/static/form.js?v={{data.timestamp}}"></script>
 <script>
 
   const uploadImage = function (elem) {
@@ -111,8 +111,6 @@
 
   const saveField = async function (fieldName, string) {
 
-    console.log(fieldName, string);
-    
     if (!fieldName || !string) return alert('field name and string is missing');
 
     const entryId = $('#entry-container').attr('entry-id');
@@ -124,28 +122,6 @@
       success: response => {
         console.log(response);
         console.log('field saved successfully');
-      },
-      error: error => {
-        console.log(error.responseText);
-        throw new Error(error.responseText);
-      }
-    })
-  }
-
-
-  const saveArrayField = async function (fieldName, string) {
-
-    if (!fieldName || !string) return alert('field name and string is missing');
-
-    const entryId = $('#entry-container').attr('entry-id');
-    await $.ajax({
-      url: `/update-family-array-field/${entryId}`,
-      method: 'POST',
-      contentType: 'application/json',
-      data: JSON.stringify({ fieldName, string }),
-      success: response => {
-        console.log(response);
-        console.log('array field saved successfully');
       },
       error: error => {
         console.log(error.responseText);

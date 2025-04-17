@@ -42,9 +42,6 @@ app.engine('handlebars', engine({ defaultLayout: 'main' }));
 app.engine('handlebars', exphbs.engine({ helpers: hbsHelpers }));
 app.set('view engine', 'handlebars');
 
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
-
-
 app.use('/tabler', express.static(path.join(__dirname, 'node_modules', '@tabler', 'core', 'dist')));
 app.use('/static', express.static(path.join(__dirname, 'static')));
 

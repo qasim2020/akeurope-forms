@@ -76,6 +76,7 @@ exports.saveFamilyField = async (req, res) => {
         }
         if (!fieldName || !string || !entryId) throw new Error('incomplete fields');
         const model = FamilyArabic;
+        console.log(string);
         await saveFieldInForm(model, fieldName, string, entryId, req);
         res.status(200).send('saved');
     } catch (error) {

@@ -133,7 +133,7 @@ async function createAttachmentsField(key, field, useTranslation, value = '', tr
     <div class="mb-3">
         <label for="${key}" class="form-label">${label}</label>
         <div class="attachments attachments-controller row text-center bg-secondary-lt justify-content-center d-flex align-items-center border rounded p-3 pb-2" style="margin: 0 0.5px">
-            <button class="btn btn-secondary-outline mb-2" onclick="addFile(this)">
+            <button class="file-upload-btn btn btn-secondary-outline mb-2" onclick="addFile(this)">
                 <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-plus ms-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
                 ${uploadBtnText}
             </button>

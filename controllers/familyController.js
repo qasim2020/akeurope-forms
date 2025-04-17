@@ -38,6 +38,7 @@ exports.family = async (req, res) => {
         res.render('familyForm', {
             layout: 'main',
             data: {
+                timestamp: Date.now(),
                 uploads,
                 formFields,
                 rtl: true,
