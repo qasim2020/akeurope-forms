@@ -1,9 +1,10 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const OrphanArabic = require('../models/OrphanArabic');
 const FamilyArabic = require('../models/FamilyArabic');
 const { camelCaseToNormalString } = require('../modules/helpers');
 
-const saveFieldInForm = async(model, fieldName, string, entryId, req) => {
+const saveFieldInForm = async(model, fieldName, value, entryId, req) => {
 
     const schemaField = model.schema.path(fieldName);
 
@@ -18,7 +19,7 @@ const saveFieldInForm = async(model, fieldName, string, entryId, req) => {
                 { _id: entryId },
                 {
                     $set: {
-                        [fieldName]: string,
+                        [fieldName]: value,
                         uploadedBy: {
                             actorType: 'user',
                             actorId: req.session.user._id,
@@ -29,14 +30,14 @@ const saveFieldInForm = async(model, fieldName, string, entryId, req) => {
                 { upsert: true },
             );
         } else {
-            console.log('Unique field already saved so skipping!');
+            console.log('Unique field already saved so skipping = or if user trying to delete cant delete!!');
         }
     } else {
         await model.updateOne(
             { _id: entryId },
             {
                 $set: {
-                    [fieldName]: string,
+                    [fieldName]: value,
                     uploadedBy: {
                         actorType: 'user',
                         actorId: req.session.user._id,
@@ -49,24 +50,9 @@ const saveFieldInForm = async(model, fieldName, string, entryId, req) => {
     }
 }
 
-exports.saveOrphanField = async (req, res) => {
+exports.saveField = async (req, res) => {
     try {
-        const { entryId } = req.params;
-        const { fieldName, string: gotString } = req.body;
-        const string = gotString.trim();
-        if (!fieldName || !string || !entryId) throw new Error('incomplete fields');
-        const model = OrphanArabic;
-        await saveFieldInForm(model, fieldName, string, entryId, req);
-        res.status(200).send('saved');
-    } catch (error) {
-        console.log(error);
-        res.status(500).send(error.toString());
-    }
-};
-
-exports.saveFamilyField = async (req, res) => {
-    try {
-        const { entryId } = req.params;
+        const { entryId, collectionName } = req.params;
         const { fieldName, string: gotString } = req.body;
         let string;
         if (Array.isArray(gotString)) {
@@ -74,9 +60,9 @@ exports.saveFamilyField = async (req, res) => {
         } else if (typeof gotString === 'string') {
             string = gotString.trim();
         }
-        if (!fieldName || !string || !entryId) throw new Error('incomplete fields');
-        const model = FamilyArabic;
-        console.log(string);
+        if (!fieldName || !string || !entryId || !collectionName) throw new Error('Incomplete fields');
+        const model = mongoose.model(collectionName);
+        if (!model) throw new Error('Model not found');
         await saveFieldInForm(model, fieldName, string, entryId, req);
         res.status(200).send('saved');
     } catch (error) {
@@ -85,21 +71,51 @@ exports.saveFamilyField = async (req, res) => {
     }
 };
 
-exports.validateFamilyField = async (req, res) => {
+
+exports.saveArrayField = async (req, res) => {
     try {
-        const { entryId } = req.params;
+        const { entryId, collectionName } = req.params;
+        const { fieldName, files } = req.body;
+
+        if (!Array.isArray(files)) {
+            throw new Error('Expected an array of strings');
+        }
+
+        if (!fieldName || !entryId || !collectionName) {
+            throw new Error('Incomplete fields');
+        }
+
+        const model = mongoose.model(collectionName);
+        if (!model) throw new Error('Model not found');
+
+        await saveFieldInForm(model, fieldName, files, entryId, req);
+        res.status(200).send('saved');;
+    } catch (error) {
+        console.log(error);
+        res.status(500).send(error.toString());
+    }
+};
+
+exports.validateField = async (req, res) => {
+    try {
+        const { entryId, collectionName } = req.params;
         const { fieldName, string: gotString } = req.body;
-        const string = gotString.trim();
+        let string;
+        if (Array.isArray(gotString)) {
+            string = gotString.map(s => s.trim()).filter(s => s); 
+        } else if (typeof gotString === 'string') {
+            string = gotString.trim();
+        }
         if (!fieldName || !string || !entryId) throw new Error('Incomplete fields');
-        const existing = await FamilyArabic.findOne({
+        const model = mongoose.model(collectionName);
+        const existing = await model.findOne({
             [fieldName]: string,
             _id: { $ne: entryId }, 
           }).lean();
         if (existing) {
             const actor = await User.findById(existing.uploadedBy?.actorId).lean()
-            throw new Error(`${camelCaseToNormalString(fieldName)} is connect with ${actor.phoneNumber}. Therefore can not be added here.`);
+            throw new Error(`${camelCaseToNormalString(fieldName)}: ${string} is connected with ${actor.phoneNumber} in another form. Therefore can not be added here.`);
         }
-         
         res.status(200).send('Go ahead, save this entry');
     } catch (error) {
         console.log(error);
@@ -107,17 +123,15 @@ exports.validateFamilyField = async (req, res) => {
     }
 };
 
-exports.validateOrphanField = async (req, res) => {
+
+exports.deleteFieldValue = async (req, res) => {
     try {
-        const { entryId } = req.params;
-        const { fieldName, string: gotString } = req.body;
-        const string = gotString.trim();
-        if (!fieldName || !string || !entryId) throw new Error('Incomplete fields');
-        const existing = await OrphanArabic.findOne({
-            [fieldName]: string,
-            _id: { $ne: entryId }, 
-          }).lean();
-        if (existing) throw new Error(`${camelCaseToNormalString(fieldName)} is already saved in another document.`);
+        const { entryId, collectionName } = req.params;
+        const { fieldName } = req.body;
+        if (!fieldName || !entryId || !collectionName) throw new Error('Incomplete fields');
+        const model = mongoose.model(collectionName);
+        if (!model) throw new Error('Model not found');
+        await saveFieldInForm(model, fieldName, "", entryId, req);
         res.status(200).send('Go ahead, save this entry');
     } catch (error) {
         console.log(error);

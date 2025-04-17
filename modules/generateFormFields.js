@@ -147,29 +147,38 @@ async function createAttachmentsField(key, field, useTranslation, value = '', tr
 
 async function createFileInputField(key, field, useTranslation, value = '', translations) {
     const label = useTranslation ? translations[key] || key : key;
-    const isImage = value && /\.(jpeg|jpg|png|webp|tiff)$/i.test(value);
-
-    let file = null;
-    if (value) {
-        file = await File.findById(value).lean();
-    }
-
-    return `<div class="mb-3">
-                <label for="${key}" class="form-label">${label}</label>
-                <input type="file" class="form-control" id="${key}" name="${key}" 
-                    accept="image/jpeg,image/png,image/webp,image/tiff,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
-                <input type="text" class="form-control field-control d-none" name="${key}" value="${value}"/>
-                ${
-                    file
-                        ? `
-                        <a href="/file/${file._id}" class="btn btn-outline-primary mt-2 d-block fw-bold" download>
-                            <span class="d-none d-md-inline-block">Download ${file.name}</span>
-                            <span class="d-inline-block d-md-none">Download ${shortenFileName(file.name)}</span>
-                        </a>`
-                        : ''
-                }
-                ${isImage ? `<img src="/file/${value}" class="img-thumbnail mt-2" style="max-width: 200px;">` : ''}
-            </div>`;
+    let btn = "";
+    if (value.length !== 0) {
+        const fileId = value;
+        const file = await File.findById(fileId).lean();
+        if (!file) 
+            throw new Error('No file found.')
+        btn = `
+            <div class="btn-group w-100 mb-2 px-0" role="group" dir="ltr" file-id="${file._id}">
+                <a href="/file/${file._id}" class="btn fw-bold text-start py-3" style="flex-grow: 1;" download>
+                    <span class="d-none d-md-inline-block"> ${shortenFileName(file.name, 50)}</span>
+                    <span class="d-inline-block d-md-none"> ${shortenFileName(file.name, 20)}</span>
+                </a>
+                <button type="button" class="btn fw-bold py-3" style="flex: 0 0 100px;" onclick="deleteSingleFile(this)">
+                    <i class="ti ti-trash fs-3"></i>
+                </button>
+            </div>
+        `;
+    };
+    return `
+    <div class="mb-3">
+        <label for="${key}" class="form-label">${label}</label>
+        <div class="attachment attachment-controller row text-center bg-secondary-lt justify-content-center d-flex align-items-center border rounded p-3 pb-2" style="margin: 0 0.5px">
+            <button class="file-upload-btn btn btn-secondary-outline mb-2" onclick="deleteAndAddFile(this)">
+                <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-plus ms-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
+                انقر للتحميل
+            </button>
+            <input type="file" class="form-control d-none" id="${key}" name="${key}" 
+                accept="application/pdf,image/jpeg,image/png,image/webp,image/tiff">
+            <input type="text" class="form-control field-control d-none" name="${key}" value="${value}"/>
+            ${btn || ""}
+        </div>
+    </div>`;
 }
 
 async function generateFormFields(schema, data = {}, useTranslation = false, translations) {

@@ -31,11 +31,11 @@ exports.newFamily = async (req, res) => {
 
 exports.family = async (req, res) => {
     try {
-        const entry = await FamilyArabic.findById(req.params.entryId).lean();
+        const entry = await FamilyArabic.findOne({_id: req.params.entryId, 'uploadedBy.actorId': req.session.user._id}).lean();
         if (!entry) throw new Error('Family data not found');
         const formFields = await generateFormFields(FamilyArabic.schema, entry, true, translations);
         const uploads = await FamilyArabic.find({ 'uploadedBy.actorId': req.session.user._id }).lean();
-        res.render('familyForm', {
+        res.render('form', {
             layout: 'main',
             data: {
                 timestamp: Date.now(),
@@ -43,7 +43,10 @@ exports.family = async (req, res) => {
                 formFields,
                 rtl: true,
                 entryId: entry._id,
-                remaining: req.session.user.maxUploads - uploads.length
+                collectionName: 'FamilyArabic',
+                getRoute: 'get-family',
+                newRoute: 'new-family',
+                remaining: req.session.user.maxUploads - uploads.length > 0 ? req.session.user.maxUploads - uploads.length : 0
             },
         });
     } catch (error) {

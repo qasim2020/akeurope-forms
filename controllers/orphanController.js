@@ -29,10 +29,12 @@ exports.newOrphan = async (req, res) => {
 
 exports.orphan = async (req, res) => {
     try {
-        const entry = await OrphanArabic.findById(req.params.entryId).lean();
+        const entry = await OrphanArabic.findOne({_id: req.params.entryId, 'uploadedBy.actorId': req.session.user._id}).lean();
+        if (!entry)
+            throw new Error('No entry found.')
         const formFields = await generateFormFields(OrphanArabic.schema, entry, true, translations);
         const uploads = await OrphanArabic.find({ 'uploadedBy.actorId': req.session.user._id }).lean();
-        res.render('orphanForm', {
+        res.render('form', {
             layout: 'main',
             data: {
                 timestamp: Date.now(),
@@ -40,10 +42,14 @@ exports.orphan = async (req, res) => {
                 formFields,
                 rtl: true,
                 entryId: entry._id,
-                remaining: req.session.user.maxUploads - uploads.length
+                collectionName: 'OrphanArabic',
+                getRoute: 'get-orphan',
+                newRoute: 'new-orphan',
+                remaining: req.session.user.maxUploads - uploads.length > 0 ? req.session.user.maxUploads - uploads.length : 0
             },
         });
     } catch (error) {
+        console.log(error);
         res.render('error', {
             layout: 'main',
             error: error.message,
