@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const cloudinary = require('cloudinary').v2;
 const File = require('../models/File');
 const fs = require('fs').promises;
@@ -74,12 +75,22 @@ exports.uploadFile = async (req, res) => {
 
 exports.deleteFile = async (req, res) => {
     try {
+
+        const { fileId, collectionName, entryId, fieldName } = req.params;
         let file;
-        file = await File.findOne({ _id: req.params.fileId, 'uploadedBy.actorId': req.session.user._id }).lean();
+        file = await File.findOne({ _id: fileId, 'uploadedBy.actorId': req.session.user._id }).lean();
 
         if (!file) {
             return res.status(404).send({ error: 'File not found' });
         }
+
+        const model = mongoose.model(collectionName);
+        if (!model) throw new Error('Model not found');
+
+        const schemaField = model.schema.path(fieldName);
+
+        if (schemaField?.options?.static) 
+            throw new Error('Files belonging to static field can not be deleted.');
 
         const dir = path.join(__dirname, process.env.UPLOADS_DIR);
         const filePath = path.join(dir, file.path);

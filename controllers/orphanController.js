@@ -32,7 +32,7 @@ exports.orphan = async (req, res) => {
         const entry = await OrphanArabic.findOne({_id: req.params.entryId, 'uploadedBy.actorId': req.session.user._id}).lean();
         if (!entry)
             throw new Error('No entry found.')
-        const formFields = await generateFormFields(OrphanArabic.schema, entry, true, translations);
+        const formFields = await generateFormFields(OrphanArabic.schema, entry, true, translations, 'OrphanArabic', entry._id);
         const uploads = await OrphanArabic.find({ 'uploadedBy.actorId': req.session.user._id }).lean();
         res.render('form', {
             layout: 'main',

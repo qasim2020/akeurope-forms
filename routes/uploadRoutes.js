@@ -10,6 +10,6 @@ router.get('/file/:collectionName/:entryId/:fileId', authenticate, authorize, up
 router.get('/file-data/:collectionName/:entryId/:fileId', authenticate, authorize, uploadController.fileData);
 router.post('/upload-image/:collectionName/:entryId', authenticate, authorize, upload.single('image'), uploadController.uploadImage);
 router.post('/upload-file/:collectionName/:entryId', authenticate, authorize, uploadFile.single('file'), uploadController.uploadFile);
-router.post('/delete-file/:collectionName/:entryId/:fileId', authenticate, authorize, uploadController.deleteFile);
+router.post('/delete-file/:collectionName/:entryId/:fileId/:fieldName', authenticate, authorize, uploadController.deleteFile);
 
 module.exports = router;

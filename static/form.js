@@ -1,16 +1,55 @@
+$(document).ready(function () {
+    $('[on-page-load]').each(function () {
+        const request = $(this).attr('on-page-load');
+        if (request === 'handle-connections') {
+            const elem = $(this);
+            const connectionsString = $(elem).closest('.field').attr('connections');
+            const connections = JSON.parse(connectionsString);
+            const value = $(elem).val();
+            hideShowFields(connections, value); 
+        }
+    });
+});
+
+const handleConnections = function(elem) {
+    const connectionsString = $(elem).closest('.field').attr('connections');
+    const connections = JSON.parse(connectionsString);
+    const value = $(elem).find('strong').html();
+    hideShowFields(connections, value);    
+}
+
+const hideShowFields = function(connections, value) {
+    const match = connections.find(con => con.value === value);
+    if (match?.hideFields) {
+        match?.hideFields.forEach(field => {
+            $(`.field[field-name=${field}]`).addClass('d-none');
+        })
+    } else if (match?.showFields) {
+        match?.showFields.forEach(field => {
+            $(`.field[field-name=${field}]`).removeClass('d-none');
+        })
+    } else {
+        alert('A coding error. please let us know.')
+    }
+}
+
 const deleteFile = async function (elem) {
     try {
         const fileId = $(elem).closest('[file-id]').attr('file-id');
         const form = $('#entry-container').attr('collection-name');
         const entryId = $('#entry-container').attr('entry-id');
+        const fieldName = $(elem).closest('.field').find('input[name]').attr('name');
+
         await $.ajax({
-            url: `/delete-file/${form}/${entryId}/${fileId}`,
+            url: `/delete-file/${form}/${entryId}/${fileId}/${fieldName}`,
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ fileId }),
         });
+
         const controller = $(elem).closest('.attachments');
         $(elem).closest('.btn-group').remove();
+
         await saveAttachmentsInEntry(controller);
     } catch (error) {
         alert(error.responseText || error.toString() || 'Server Error, please send us an email of this error');
@@ -101,7 +140,7 @@ const saveAttachmentsInEntry = async function (controller) {
         url: `/update-array-field/${form}/${entryId}`,
         method: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({ fieldName, files })
+        data: JSON.stringify({ fieldName, files }),
     });
 };
 
@@ -137,19 +176,21 @@ const drawFileBtnGroup = async function (fileId, elem) {
 const drawFilesBtnGroup = async function (fileId, elem) {
     const form = $('#entry-container').attr('collection-name');
     const entryId = $('#entry-container').attr('entry-id');
+    const isStaticField = $(elem).closest('.field').attr('is-static') ? true : false;
+    console.log(isStaticField);
     const file = await $.ajax({
         url: `/file-data/${form}/${entryId}/${fileId}`,
         method: 'GET',
     });
     const btnGroup = `
     <div class="btn-group w-100 mb-2 px-0" role="group" dir="ltr" file-id="${file._id}">
-        <a href="/file/${file._id}" class="btn fw-bold text-start py-3" style="flex-grow: 1;" download>
+        <a href="/file/${form}/${entryId}/${file._id}" class="btn fw-bold text-start py-3" style="flex-grow: 1;" download>
             <span class="d-none d-md-inline-block"> ${shortenFileName(file.name, 50)}</span>
             <span class="d-inline-block d-md-none"> ${shortenFileName(file.name, 20)}</span>
         </a>
-        <button type="button" class="btn fw-bold py-3" style="flex: 0 0 100px;" onclick="deleteFile(this)">
+        ${isStaticField ? "" : `<button type="button" class="btn fw-bold py-3" style="flex: 0 0 100px;" onclick="deleteFile(this)">
             <i class="ti ti-trash fs-3"></i>
-        </button>
+        </button>`}
     </div>`;
     const controller = $(elem).closest('.attachments');
     controller.append(btnGroup);
@@ -208,7 +249,7 @@ $('[type=file]').on('change', async function () {
                         data: JSON.stringify({ fileId }),
                     });
                     fileBtnGroup.remove();
-                };
+                }
                 await drawFileBtnGroup(fileId, elem);
                 await saveAttachmentInEntry(controller);
                 controller.addClass('is-valid');
@@ -222,12 +263,15 @@ $('[type=file]').on('change', async function () {
     }
 });
 
-const addFieldError = function (elem) {
+const addFieldError = function (elem, error) {
     $(elem).siblings('.form-control').addClass('is-invalid');
     $(elem).addClass('is-invalid');
     $(elem).closest('.image-controller').addClass('is-invalid');
     $(elem).closest('.attachments-controller').addClass('is-invalid');
     $(elem).closest('.attachment-controller').addClass('is-invalid');
+    $(elem).closest('.field').append(`
+        <div class="invalid-feedback d-block" dir="ltr">${error}</div>
+        `);
 };
 
 const addFieldSuccess = function (elem) {
@@ -236,7 +280,45 @@ const addFieldSuccess = function (elem) {
     $(elem).closest('.image-controller').addClass('is-valid');
     $(elem).closest('.attachments-controller').addClass('is-valid');
     $(elem).closest('.attachment-controller').addClass('is-valid');
+    console.log($(elem));
 };
+
+function checkMaskPattern(maskPatterns, fieldValue) {
+    if (typeof maskPatterns === 'string' && maskPatterns.indexOf(',') > -1) {
+        maskPatterns = maskPatterns.split(',').map(p => p.trim());
+    } else if (typeof maskPatterns === 'string') {
+        maskPatterns = [maskPatterns.trim()];
+    }
+
+    const patternMap = {
+        9: '\\d',
+        A: '[A-Z]',
+        a: '[a-z]',
+        '*': '[A-Za-z0-9]',
+    };
+
+    console.log(maskPatterns);
+
+    return maskPatterns.some(maskPattern => {
+        let regexStr = '';
+
+        for (let char of maskPattern) {
+            if (patternMap[char]) {
+                regexStr += patternMap[char];
+            } else {
+                regexStr += char.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            }
+        }
+
+        const regex = new RegExp('^' + regexStr + '$');
+        return regex.test(fieldValue);
+    });
+}
+
+function convertRadioToInput(elem, key, value, isStaticField, dir) {
+    const html = `<input dir="${dir}" is-static=${isStaticField} type="text" class="form-control field-control is-valid" id="${key}" name="${key}" value="${value}" disabled>`;
+    $(elem).replaceWith(html);
+}
 
 const saveForm = async function (elem) {
     let isValid = true;
@@ -246,30 +328,57 @@ const saveForm = async function (elem) {
     $(elem).siblings('.alert').remove();
     $('#entry-container').find('.is-valid').removeClass('is-valid');
     $('#entry-container').find('.is-invalid').removeClass('is-invalid');
+    $('#entry-container').find('.invalid-feedback').remove();
 
     $('#entry-container .field-control').each(async function () {
-        const isFilesController = $(this).closest('.attachments-controller').length > 0;
-        const fieldName = $(this).attr('name');
+        const isHidden = $(this).closest('.field').hasClass('d-none');
+        if (isHidden) return;
         const fieldValue = $(this).val() || $(this).find('[type=radio]:checked').val();
-        const isUniqueField = $(this).attr('is-unique') === 'true';
         if (fieldValue) {
             try {
+                const dir = $(this).closest('.field').attr('dir');
+                const isRadioBtn =  $(this).find('[type=radio]:checked').val();
+                const isUniqueField = $(this).attr('is-unique') === 'true';
+                const isStaticField = $(this).attr('is-static') === 'true';
+                const maskPattern = $(this).attr('mask-pattern');
+                const isFilesController = $(this).closest('.attachments-controller').length > 0;
+                const fieldName = $(this).attr('name');
+
+                if (typeof maskPattern === 'string' && maskPattern.length > 0) {
+                    const showUser = $(this).attr('placeholder');
+                    const isValid = checkMaskPattern(maskPattern, fieldValue);
+                    if (!isValid) throw new Error(`${fieldValue} do not match ${showUser}`);
+                }
+
                 if (isUniqueField) {
                     await validateField(fieldName, fieldValue);
                     await saveField(fieldName, fieldValue);
                     $(this).attr({ disabled: true });
                 }
+
+                if (isStaticField) {
+                    $(this).attr({ disabled: true });
+                    await saveField(fieldName, fieldValue);
+                }
+
                 if (!isFilesController) {
                     await saveField(fieldName, fieldValue);
                 }
+
+                if (isRadioBtn) {
+                    convertRadioToInput(this, fieldName, fieldValue, isStaticField, dir);
+                }
+
                 addFieldSuccess(this);
             } catch (error) {
-                addFieldError(this);
-                alert(error.responseText);
+                console.log(error);
+                const message = error.responseText || error.message || 'Unknown error - handle it';
+                addFieldError(this, message);
             }
         } else {
             isValid = false;
-            addFieldError(this);
+            const message = 'Invalid entry';
+            addFieldError(this, message);
         }
     });
 

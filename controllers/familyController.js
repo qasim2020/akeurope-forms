@@ -33,7 +33,7 @@ exports.family = async (req, res) => {
     try {
         const entry = await FamilyArabic.findOne({_id: req.params.entryId, 'uploadedBy.actorId': req.session.user._id}).lean();
         if (!entry) throw new Error('Family data not found');
-        const formFields = await generateFormFields(FamilyArabic.schema, entry, true, translations);
+        const formFields = await generateFormFields(FamilyArabic.schema, entry, true, translations, 'FamilyArabic', entry._id);
         const uploads = await FamilyArabic.find({ 'uploadedBy.actorId': req.session.user._id }).lean();
         res.render('form', {
             layout: 'main',

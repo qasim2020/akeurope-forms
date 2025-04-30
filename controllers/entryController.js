@@ -4,6 +4,38 @@ const OrphanArabic = require('../models/OrphanArabic');
 const FamilyArabic = require('../models/FamilyArabic');
 const { camelCaseToNormalString } = require('../modules/helpers');
 
+function checkMaskPattern(maskPatterns, fieldValue) {
+    if (typeof maskPatterns === 'string' && maskPatterns.indexOf(',') > -1) {
+        maskPatterns = maskPatterns.split(',').map(p => p.trim());
+    } else if (typeof maskPatterns === 'string') {
+        maskPatterns = [maskPatterns.trim()];
+    }
+
+    const patternMap = {
+        9: '\\d',
+        A: '[A-Z]',
+        a: '[a-z]',
+        '*': '[A-Za-z0-9]',
+    };
+
+    console.log(maskPatterns);
+
+    return maskPatterns.some(maskPattern => {
+        let regexStr = '';
+
+        for (let char of maskPattern) {
+            if (patternMap[char]) {
+                regexStr += patternMap[char];
+            } else {
+                regexStr += char.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            }
+        }
+
+        const regex = new RegExp('^' + regexStr + '$');
+        return regex.test(fieldValue);
+    });
+}
+
 const saveFieldInForm = async(model, fieldName, value, entryId, req) => {
 
     const schemaField = model.schema.path(fieldName);
@@ -11,10 +43,18 @@ const saveFieldInForm = async(model, fieldName, value, entryId, req) => {
     if (!schemaField)
         throw new Error(`Field ${fieldName} does not exist`);
 
-    if (schemaField?.options?.unique) {
+    if (schemaField?.options?.unique || schemaField?.options?.static) {
         const existing = await model.findOne({ _id: entryId }, { [fieldName]: 1 }).lean();
 
         if (!existing?.[fieldName]) {
+
+            if (schemaField?.options?.mask) {
+                const array = schemaField?.options?.mask;
+                const maskPatterns = array.map((val) => val.pattern).join(',');
+                const isValid = checkMaskPattern(maskPatterns, value);
+                if (!isValid) throw new Error('Pattern do not match.');
+            }
+
             await model.updateOne(
                 { _id: entryId },
                 {
@@ -50,6 +90,68 @@ const saveFieldInForm = async(model, fieldName, value, entryId, req) => {
     }
 }
 
+const addInStaticArrayField = async(model, fieldName, value, entryId, req) => {
+
+    const schemaField = model.schema.path(fieldName);
+
+    if (!schemaField)
+        throw new Error(`Field ${fieldName} does not exist`);
+
+    if (schemaField?.options?.static) {
+        const existing = await model.findOne({ _id: entryId }, { [fieldName]: 1 }).lean();
+
+        if (!existing[fieldName] || existing?.[fieldName].length === 0) {
+            await model.updateOne(
+                { _id: entryId },
+                {
+                    $set: {
+                        [fieldName]: value,
+                        uploadedBy: {
+                            actorType: 'user',
+                            actorId: req.session.user._id,
+                            actorUrl: `/user/${req.session.user._id}`,
+                        },
+                    },
+                },
+                { upsert: true },
+            );
+        } else if (existing[fieldName] === value) {
+            throw new Error('Static array field no changes - so not pushing new value into the array');
+        } else {
+            const prvs = existing[fieldName];
+            if (!prvs)
+                throw new Error('Why the field is empty. dont come here.');
+            const existingValues = existing[fieldName];
+            if (!existingValues || existingValues.length === 0) 
+                throw new Error('the existing values should be split by a comma (,) - is getting undefined - please check');
+            const newValues = value;
+            if (!newValues || newValues.length === 0) 
+                throw new Error('new values should be comma split - but getting no value here - please check');
+            const addition = newValues.filter(val => existingValues.includes(val) === false);
+            console.log(existingValues, newValues, addition);
+            if (!addition || addition.length === 0)
+                throw new Error('no new values - why calling this function please check');
+            const saveNow = [...existingValues, ...addition];
+            await model.updateOne(
+                { _id: entryId },
+                {
+                    $set: {
+                        [fieldName]: saveNow,
+                        uploadedBy: {
+                            actorType: 'user',
+                            actorId: req.session.user._id,
+                            actorUrl: `/user/${req.session.user._id}`,
+                        },
+                    },
+                },
+                { upsert: true },
+            );
+        }
+    } else {
+        throw new Error('add in field array should not be called for this - please check');
+    }
+}
+
 exports.saveField = async (req, res) => {
     try {
         const { entryId, collectionName } = req.params;
@@ -71,7 +173,6 @@ exports.saveField = async (req, res) => {
     }
 };
 
-
 exports.saveArrayField = async (req, res) => {
     try {
         const { entryId, collectionName } = req.params;
@@ -88,8 +189,15 @@ exports.saveArrayField = async (req, res) => {
         const model = mongoose.model(collectionName);
         if (!model) throw new Error('Model not found');
 
-        await saveFieldInForm(model, fieldName, files, entryId, req);
-        res.status(200).send('saved');;
+        const schemaField = model.schema.path(fieldName);
+
+        if (schemaField?.options?.static) {
+            await addInStaticArrayField(model, fieldName, files, entryId, req);
+        } else {
+            await saveFieldInForm(model, fieldName, files, entryId, req);           
+        }
+        res.status(200).send('saved');
+
     } catch (error) {
         console.log(error);
         res.status(500).send(error.toString());
@@ -114,7 +222,7 @@ exports.validateField = async (req, res) => {
           }).lean();
         if (existing) {
             const actor = await User.findById(existing.uploadedBy?.actorId).lean()
-            throw new Error(`${camelCaseToNormalString(fieldName)}: ${string} is connected with ${actor.phoneNumber} in another form. Therefore can not be added here.`);
+            throw new Error(`${camelCaseToNormalString(fieldName)}: ${string} is connected with ${actor.phoneNumber} in another form. Therefore should not be added here.`);
         }
         res.status(200).send('Go ahead, save this entry');
     } catch (error) {
@@ -131,6 +239,9 @@ exports.deleteFieldValue = async (req, res) => {
         if (!fieldName || !entryId || !collectionName) throw new Error('Incomplete fields');
         const model = mongoose.model(collectionName);
         if (!model) throw new Error('Model not found');
+        const schemaField = model.schema.path(fieldName);
+        if (schemaField?.options?.static) 
+            throw new Error('Static field can not be deleted.')
         await saveFieldInForm(model, fieldName, "", entryId, req);
         res.status(200).send('Go ahead, save this entry');
     } catch (error) {
