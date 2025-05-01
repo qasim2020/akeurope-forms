@@ -119,7 +119,7 @@ function createInputField(key, field, useTranslation, value = '', translations) 
         } else {
             return `<div class="mb-3 field" field-name="${key}">
                 <label for="${key}" class="form-label">${label}</label>
-                <input dir="${dir}" is-static=${isStaticField} mask-pattern="${maskPattern}" placeholder="${maskUserShow}" is-unique=true type="${inputType}" class="form-control field-control" id="${key}" name="${key}" required>
+                <input dir="${dir}" is-static=${isStaticField} mask-pattern="${maskPattern}" placeholder="${maskUserShow}" is-unique=${isUniqueField} type="${inputType}" class="form-control field-control" id="${key}" name="${key}" required>
             </div>`;
         }
     } else {

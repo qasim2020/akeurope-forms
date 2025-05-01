@@ -14,8 +14,8 @@ const familyArabicSchema = new mongoose.Schema(
             static: true,
             dir: 'ltr',
             mask: [{
-                pattern: '9999999999',
-                showUser: '1234567890'
+                pattern: '999999999',
+                showUser: '123456789'
             }]
         },
         passportNumber: {
@@ -27,13 +27,13 @@ const familyArabicSchema = new mongoose.Schema(
             mask: [{
                 pattern: '9999999999',
                 showUser: '1234567890'
-            }]
+            },]
         },
         maritalStatus: {
             type: String,
             static: true,
             dir: 'rtl',
-            enum: ["أعزب", "متزوج من مواطن مصري", "تزوج ممن مواطن غزي", "أرمل", "مطلق"],
+            enum: ["أعزب", "متزوج", "أرمل", "مطلق"],
             connections: [{
                 value: "أرمل",
                 hideFields: ['spouseName', 'spouseIdNumber', 'spousePassportNumber']
@@ -44,11 +44,8 @@ const familyArabicSchema = new mongoose.Schema(
                 value: "مطلق",
                 hideFields: ['spouseName', 'spouseIdNumber', 'spousePassportNumber']
             },{
-                value: "تزوج ممن مواطن غزي",
+                value: "متزوج",
                 showFields: ['spouseName', 'spouseIdNumber', 'spousePassportNumber']
-            },{
-                value: "متزوج من مواطن مصري",
-                showFields: ['spouseName', 'spouseIdNumber', 'spousePassportNumber'] 
             }],
         },
         spouseName: {
@@ -58,10 +55,14 @@ const familyArabicSchema = new mongoose.Schema(
         },
         spouseIdNumber: {
             type: String,
-            static: true,
             unique: true,
             sparse: true,
+            static: true,
             dir: 'ltr',
+            mask: [{
+                pattern: '999999999',
+                showUser: '123456789'
+            }]
         },
         spousePassportNumber: {
             type: String,
@@ -99,11 +100,8 @@ const familyArabicSchema = new mongoose.Schema(
             type: String,
             dir: 'ltr',
             mask: [{
-                pattern: '+201#########',
+                pattern: '+9999999999999',
                 showUser: '+2019876543210'
-            },{
-                pattern: '+9709999999',
-                showUser: '+9709876543',
             }],
             static: true,
         },
@@ -111,10 +109,10 @@ const familyArabicSchema = new mongoose.Schema(
             type: String,
             dir: 'ltr',
             mask: [{
-                pattern: '+201#########',
+                pattern: '+9999999999999',
                 showUser: '+2019876543210'
             },{
-                pattern: '+9709999999',
+                pattern: '+9999999999',
                 showUser: '+9709876543',
             }],
             static: true
