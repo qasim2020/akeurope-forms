@@ -12,11 +12,6 @@
         <div class="form-container" id="container-send-code" class="d-none">
 
           <div class="mb-3">
-            <label class="form-label">اسم المستخدم</label>
-            <input id="name" type="text" class="text-center form-control" placeholder="الاسم" autocomplete="off" required>
-          </div>
-
-          <div class="mb-3">
             <label class="form-label">رقم الواتساب مع المقدمة الدولية</label>
             <input id="tel" type="tel" class="text-center form-control" placeholder="+9705XXXXXXXX" autocomplete="off" required>
           </div>
@@ -92,7 +87,7 @@
 
   const sendCode = function (elem) {
     const phone = $('#tel').val();
-    const name = $('#name').val();
+    const name = "Not Required";
 
     $(elem).closest('.form-container').find('.alert').remove();
     $(elem).closest('.form-container').find('.invalid-feedback').remove();
@@ -158,7 +153,7 @@
       success: function (response) {
         window.location.href = '/';
       },
-      error: function (xhr, status, error) {
+      error: function (xhr, status, error) {F
         $(elem).html(currentBtnHTML);
         if (status != 400) {
           $(elem).after(`
