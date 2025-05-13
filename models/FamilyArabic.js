@@ -24,10 +24,6 @@ const familyArabicSchema = new mongoose.Schema(
             sparse: true,
             static: true,
             dir: 'ltr',
-            mask: [{
-                pattern: '9999999999',
-                showUser: '1234567890'
-            },]
         },
         maritalStatus: {
             type: String,
@@ -70,10 +66,6 @@ const familyArabicSchema = new mongoose.Schema(
             unique: true,
             sparse: true,
             dir: 'ltr',
-            mask: [{
-                pattern: '9999999999',
-                showUser: '1234567890'
-            }]
         },
         noOfFamilyMembers: {
             type: Number,
@@ -99,22 +91,11 @@ const familyArabicSchema = new mongoose.Schema(
         phoneNumber: {
             type: String,
             dir: 'ltr',
-            mask: [{
-                pattern: '+9999999999999',
-                showUser: '+2019876543210'
-            }],
             static: true,
         },
         whatsappNumber: {
             type: String,
             dir: 'ltr',
-            mask: [{
-                pattern: '+9999999999999',
-                showUser: '+2019876543210'
-            },{
-                pattern: '+9999999999',
-                showUser: '+9709876543',
-            }],
             static: true
         },
         attachments: {
