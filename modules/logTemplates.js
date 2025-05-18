@@ -20,7 +20,7 @@ const logTemplates = ({ type, entity, actor, slug, changes }) => {
         } : null,
         formCompleted: slug ? {
             ...commons('entry', entity._id),
-            action: `<a href="/entry/${entity._id}/project/${slug}">${entity.name}</a> form completed.`,
+            action: `<a href="/entry/${entity._id}/project/${slug}">Form</a> completed.`,
             color: 'orange',
         } : null,
     };

@@ -23,6 +23,7 @@ const saveLog = async ({
             action,
             changes,
             url,
+            timestamp: new Date(),
             isNotification,
             isRead,
             isReadByCustomer,
