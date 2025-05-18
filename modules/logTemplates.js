@@ -1,0 +1,39 @@
+const { slugToString } = require('../modules/helpers');
+
+const logTemplates = ({ type, entity, actor, slug, changes }) => {
+    if (!type || !entity || !actor) {
+        throw new Error('Missing required parameters: type, entity, and actor are mandatory.');
+    }
+
+    const commons = (entityType, entityId) => ({
+        entityType,
+        entityId,
+        actorType: 'beneficiary',
+        actorId: actor._id,
+    });
+
+    const templates = {
+        formCreated: slug ? {
+            ...commons('entry', entity._id),
+            action: `<a href="/entry/${entity._id}/project/${slug}">New form</a> created.`,
+            color: 'orange',
+        } : null,
+        formCompleted: slug ? {
+            ...commons('entry', entity._id),
+            action: `<a href="/entry/${entity._id}/project/${slug}">${entity.name}</a> form completed.`,
+            color: 'orange',
+        } : null,
+    };
+
+    if (templates[type] == null) {
+        throw new Error(`Incomplete parameters for template type: ${type}`);
+    }
+
+    if (!templates[type]) {
+        throw new Error(`Unknown log template type: ${type}`);
+    }
+
+    return templates[type];
+};
+
+module.exports = { logTemplates };

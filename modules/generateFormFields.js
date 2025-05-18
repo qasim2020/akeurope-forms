@@ -137,7 +137,7 @@ async function createAttachmentsField(key, field, useTranslation, value = '', tr
         uploadBtnText = '';
     if (value.length !== 0) {
         const fileIds = value;
-        const files = await File.find({ _id: { $in: fileIds } }).lean();
+        const files = await File.find({ 'links.entityId': entryId, access: 'beneficiary' }).lean();
         uploadBtnText = 'إضافة مرفق جديد';
         btnGroups = files
             .map(

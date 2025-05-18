@@ -8,5 +8,6 @@ router.post('/update-field/:collectionName/:entryId', authenticate, authorize, e
 router.post('/delete-field-value/:collectionName/:entryId', authenticate, authorize, entryController.deleteFieldValue)
 router.post('/update-array-field/:collectionName/:entryId', authenticate, authorize, entryController.saveArrayField)
 router.post('/validate-field/:collectionName/:entryId', authenticate, authorize, entryController.validateField);
+router.post('/form-completed/:collectionName/:entryId', authenticate, authorize, entryController.formCompleted);
 
 module.exports = router;

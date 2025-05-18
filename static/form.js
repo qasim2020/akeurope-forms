@@ -6,19 +6,19 @@ $(document).ready(function () {
             const connectionsString = $(elem).closest('.field').attr('connections');
             const connections = JSON.parse(connectionsString);
             const value = $(elem).val();
-            hideShowFields(connections, value); 
+            hideShowFields(connections, value);
         }
     });
 });
 
-const handleConnections = function(elem) {
+const handleConnections = function (elem) {
     const connectionsString = $(elem).closest('.field').attr('connections');
     const connections = JSON.parse(connectionsString);
     const value = $(elem).find('strong').html();
-    hideShowFields(connections, value);    
+    hideShowFields(connections, value);
 }
 
-const hideShowFields = function(connections, value) {
+const hideShowFields = function (connections, value) {
     const match = connections.find(con => con.value === value);
     if (match?.hideFields) {
         match?.hideFields.forEach(field => {
@@ -337,7 +337,7 @@ const saveForm = async function (elem) {
         if (fieldValue) {
             try {
                 const dir = $(this).closest('.field').attr('dir');
-                const isRadioBtn =  $(this).find('[type=radio]:checked').val();
+                const isRadioBtn = $(this).find('[type=radio]:checked').val();
                 const isUniqueField = $(this).attr('is-unique') === 'true';
                 const isStaticField = $(this).attr('is-static') === 'true';
                 const maskPattern = $(this).attr('mask-pattern');
@@ -395,6 +395,18 @@ const saveForm = async function (elem) {
             <div class="alert alert-success mt-4" dir="rtl" role="alert">
               <h4 class="alert-title">شكرا لك على تقديم النموذج</h4>
             </div>`);
+        try {
+            const entryId = $('#entry-container').attr('entry-id');
+            const form = $('#entry-container').attr('collection-name');
+            await $.ajax({
+                url: `/form-completed/${form}/${entryId}`,
+                method: 'POST',
+                contentType: 'application/json',
+            })
+        } catch (error) {
+            console.log(error);
+            alert(error.responseText || error.toString() || 'Server Error, please send us an email of this error');
+        }
     }
 };
 
@@ -473,7 +485,7 @@ const saveField = async function (fieldName, string) {
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ fieldName, string }),
-        success: (response) => {},
+        success: (response) => { },
         error: (error) => {
             console.log(error.responseText);
             alert(error.responseText);

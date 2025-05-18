@@ -46,21 +46,40 @@ exports.uploadImage = async (req, res) => {
 
 exports.uploadFile = async (req, res) => {
     try {
+        const { collectionName, entryId } = req.params;
+
         const fileMulter = req.file;
 
         if (!fileMulter) {
             return res.status(400).json({ message: 'No file uploaded' });
         }
 
+        let slug;
+
+        if (collectionName === 'FamilyArabic') {
+            slug = 'egypt-family';
+        } else {
+            slug = collectionName.toLowerCase();
+        }
+
         const file = new File({
+            links: [
+                {
+                    entityType: 'entry',
+                    entityId: entryId,
+                    entityUrl: `/entry/${entryId}/project/${slug}`,
+                }
+            ],
+            access: ['editor', 'beneficiary'],
+            category: 'general',
             name: fileMulter.originalname,
             size: fileMulter.size / 1000,
             path: fileMulter.filename,
             mimeType: fileMulter.mimetype,
             uploadedBy: {
-                actorType: 'user',
+                actorType: 'benificiary',
                 actorId: req.session.user._id,
-                actorUrl: `/user/${req.session.user._id}`,
+                actorUrl: `/benificiary/${req.session.user._id}`,
             },
         });
 
@@ -89,14 +108,14 @@ exports.deleteFile = async (req, res) => {
 
         const schemaField = model.schema.path(fieldName);
 
-        if (schemaField?.options?.static) 
+        if (schemaField?.options?.static)
             throw new Error('Files belonging to static field can not be deleted.');
 
         const dir = path.join(__dirname, process.env.UPLOADS_DIR);
         const filePath = path.join(dir, file.path);
         await fs.unlink(filePath);
 
-        await File.deleteOne({_id: req.params.fileId});
+        await File.deleteOne({ _id: req.params.fileId });
 
         res.status(200).send('File deleted successfully!');
     } catch (error) {
@@ -115,7 +134,7 @@ exports.fileData = async (req, res) => {
         }
 
         res.status(200).send(file);
-        
+
     } catch (error) {
         console.log(error);
         res.status(500).send(error.toString());

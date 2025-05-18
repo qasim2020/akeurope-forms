@@ -9,8 +9,19 @@ const path = require('path');
 require('dotenv').config();
 
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('MongoDB connected successfully'))
+    .then(() => console.log('Forms MongoDB connected'))
     .catch((err) => console.error('MongoDB connection error:', err));
+
+const portalConnection = mongoose.createConnection(process.env.MONGO_URI_PORTAL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
+
+portalConnection.on('connected', () => {
+    console.log('Portal MongoDB connected');
+});
+
+global.portalConnection = portalConnection;
 
 const hbsHelpers = require('./modules/helpers');
 const { sendErrorToTelegram } = require('./modules/telegramBot');

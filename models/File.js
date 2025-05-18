@@ -2,6 +2,15 @@ const mongoose = require('mongoose');
 
 const fileSchema = new mongoose.Schema(
     {
+        links: [
+            {
+                entityType: { type: String, required: true },
+                entityId: { type: mongoose.Types.ObjectId, required: true },
+                entityUrl: { type: String, required: true },
+            },
+        ],
+        category: { type: String, default: 'general' },
+        access: [String],
         name: { type: String, required: true },
         size: { type: String, required: true },
         path: { type: String, required: true, unique: true },
@@ -18,4 +27,4 @@ const fileSchema = new mongoose.Schema(
     },
 );
 
-module.exports = mongoose.model('File', fileSchema);
+module.exports = global.portalConnection.model('File', fileSchema, 'files');

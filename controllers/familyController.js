@@ -3,6 +3,8 @@ const OrphanArabic = require('../models/OrphanArabic');
 const FamilyArabic = require('../models/FamilyArabic');
 const { generateFormFields } = require('../modules/generateFormFields');
 const { familyFormTranslation: translations} = require('../modules/translations');
+const { saveLog } = require('../modules/logActions');
+const { logTemplates } = require('../modules/logTemplates');
 
 exports.newFamily = async (req, res) => {
     try {
@@ -19,6 +21,14 @@ exports.newFamily = async (req, res) => {
             },
         });
         await entry.save();
+
+        await saveLog(logTemplates({
+            type: 'formCreated',
+            entity: entry,
+            actor: req.session.user,
+            slug: 'egypt-family',
+        }));
+
         res.redirect(`/get-family/${entryId}`);
     } catch (error) {
         console.log(error);

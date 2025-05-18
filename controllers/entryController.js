@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
 const User = require('../models/User');
-const OrphanArabic = require('../models/OrphanArabic');
-const FamilyArabic = require('../models/FamilyArabic');
 const { camelCaseToNormalString } = require('../modules/helpers');
+const { saveLog } = require('../modules/logActions');
+const { logTemplates } = require('../modules/logTemplates');
+const { getChanges } = require('../modules/getChanges');
 
 function checkMaskPattern(maskPatterns, fieldValue) {
     if (typeof maskPatterns === 'string' && maskPatterns.indexOf(',') > -1) {
@@ -36,15 +37,18 @@ function checkMaskPattern(maskPatterns, fieldValue) {
     });
 }
 
-const saveFieldInForm = async(model, fieldName, value, entryId, req) => {
+const saveFieldInForm = async (model, fieldName, value, entryId, req, slug) => {
 
     const schemaField = model.schema.path(fieldName);
 
     if (!schemaField)
         throw new Error(`Field ${fieldName} does not exist`);
 
+    const existing = await model.findOne({ _id: entryId }, { [fieldName]: 1 }).lean();
+
+    let saveField = false;
+
     if (schemaField?.options?.unique || schemaField?.options?.static) {
-        const existing = await model.findOne({ _id: entryId }, { [fieldName]: 1 }).lean();
 
         if (!existing?.[fieldName]) {
 
@@ -55,24 +59,17 @@ const saveFieldInForm = async(model, fieldName, value, entryId, req) => {
                 if (!isValid) throw new Error('Pattern do not match.');
             }
 
-            await model.updateOne(
-                { _id: entryId },
-                {
-                    $set: {
-                        [fieldName]: value,
-                        uploadedBy: {
-                            actorType: 'user',
-                            actorId: req.session.user._id,
-                            actorUrl: `/user/${req.session.user._id}`,
-                        },
-                    },
-                },
-                { upsert: true },
-            );
+            saveField = true;
+
         } else {
+            saveField = false;
             console.log('Unique field already saved so skipping = or if user trying to delete cant delete!!');
         }
     } else {
+        saveField = true;
+    }
+
+    if (saveField) {
         await model.updateOne(
             { _id: entryId },
             {
@@ -87,10 +84,12 @@ const saveFieldInForm = async(model, fieldName, value, entryId, req) => {
             },
             { upsert: true },
         );
-    }
+
+    };
+
 }
 
-const addInStaticArrayField = async(model, fieldName, value, entryId, req) => {
+const addInStaticArrayField = async (model, fieldName, value, entryId, req) => {
 
     const schemaField = model.schema.path(fieldName);
 
@@ -122,10 +121,10 @@ const addInStaticArrayField = async(model, fieldName, value, entryId, req) => {
             if (!prvs)
                 throw new Error('Why the field is empty. dont come here.');
             const existingValues = existing[fieldName];
-            if (!existingValues || existingValues.length === 0) 
+            if (!existingValues || existingValues.length === 0)
                 throw new Error('the existing values should be split by a comma (,) - is getting undefined - please check');
             const newValues = value;
-            if (!newValues || newValues.length === 0) 
+            if (!newValues || newValues.length === 0)
                 throw new Error('new values should be comma split - but getting no value here - please check');
             const addition = newValues.filter(val => existingValues.includes(val) === false);
             console.log(existingValues, newValues, addition);
@@ -158,14 +157,19 @@ exports.saveField = async (req, res) => {
         const { fieldName, string: gotString } = req.body;
         let string;
         if (Array.isArray(gotString)) {
-            string = gotString.map(s => s.trim()).filter(s => s); 
+            string = gotString.map(s => s.trim()).filter(s => s);
         } else if (typeof gotString === 'string') {
             string = gotString.trim();
         }
         if (!fieldName || !string || !entryId || !collectionName) throw new Error('Incomplete fields');
         const model = mongoose.model(collectionName);
         if (!model) throw new Error('Model not found');
-        await saveFieldInForm(model, fieldName, string, entryId, req);
+        if (collectionName === 'FamilyArabic') {
+            slug = 'egypt-family';
+        } else {
+            slug = collectionName.toLowerCase();
+        }
+        await saveFieldInForm(model, fieldName, string, entryId, req, slug);
         res.status(200).send('saved');
     } catch (error) {
         console.log(error);
@@ -194,7 +198,7 @@ exports.saveArrayField = async (req, res) => {
         if (schemaField?.options?.static) {
             await addInStaticArrayField(model, fieldName, files, entryId, req);
         } else {
-            await saveFieldInForm(model, fieldName, files, entryId, req);           
+            await saveFieldInForm(model, fieldName, files, entryId, req);
         }
         res.status(200).send('saved');
 
@@ -210,7 +214,7 @@ exports.validateField = async (req, res) => {
         const { fieldName, string: gotString } = req.body;
         let string;
         if (Array.isArray(gotString)) {
-            string = gotString.map(s => s.trim()).filter(s => s); 
+            string = gotString.map(s => s.trim()).filter(s => s);
         } else if (typeof gotString === 'string') {
             string = gotString.trim();
         }
@@ -218,8 +222,8 @@ exports.validateField = async (req, res) => {
         const model = mongoose.model(collectionName);
         const existing = await model.findOne({
             [fieldName]: string,
-            _id: { $ne: entryId }, 
-          }).lean();
+            _id: { $ne: entryId },
+        }).lean();
         if (existing) {
             const actor = await User.findById(existing.uploadedBy?.actorId).lean()
             throw new Error(`${camelCaseToNormalString(fieldName)}: ${string} is connected with ${actor.phoneNumber} in another form. Therefore should not be added here.`);
@@ -231,7 +235,6 @@ exports.validateField = async (req, res) => {
     }
 };
 
-
 exports.deleteFieldValue = async (req, res) => {
     try {
         const { entryId, collectionName } = req.params;
@@ -240,12 +243,45 @@ exports.deleteFieldValue = async (req, res) => {
         const model = mongoose.model(collectionName);
         if (!model) throw new Error('Model not found');
         const schemaField = model.schema.path(fieldName);
-        if (schemaField?.options?.static) 
+        if (schemaField?.options?.static)
             throw new Error('Static field can not be deleted.')
         await saveFieldInForm(model, fieldName, "", entryId, req);
         res.status(200).send('Go ahead, save this entry');
     } catch (error) {
         console.log(error);
         res.status(500).send(error.message);
+    }
+};
+
+exports.formCompleted = async (req, res) => {
+    try {
+        const { entryId, collectionName } = req.params;
+        if (!entryId || !collectionName) throw new Error('Incomplete fields');
+        const model = mongoose.model(collectionName);
+        const entry = await model.findOne({ _id: req.params.entryId, 'uploadedBy.actorId': req.session.user._id }).lean();
+        if (!entry) throw new Error('Entry not found');
+
+        const allFieldsFilled = Object.values(entry).every(
+            (value) => value !== null && value !== undefined
+        );
+
+        if (!allFieldsFilled) {
+            throw new Error('Entry has missing values');
+        }
+
+        await saveLog(logTemplates({
+            type: 'formCompleted',
+            entity: entry,
+            actor: req.session.user,
+            slug: 'egypt-family',
+        }));
+        
+        res.status(200).send('Form completed');
+    } catch (error) {
+        console.log(error);
+        res.status(400).render('error', {
+            layout: 'main',
+            error: error.message,
+        });
     }
 };
