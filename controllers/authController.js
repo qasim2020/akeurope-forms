@@ -6,6 +6,8 @@ const twilioClient = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKE
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const User = require('../models/User');
 const GazaOrphan = require('../models/GazaOrphan');
+const { isValidEmail } = require('../modules/checkValidForm');
+const { sendEmail } = require('../modules/sendMail');
 
 const FamilyArabic = require('../models/FamilyArabic');
 
@@ -95,6 +97,50 @@ exports.sendCode = async (req, res) => {
         });
 
         res.status(200).send('Code sent!');
+    } catch (error) {
+        console.log(error);
+        res.status(400).send(error.message);
+    }
+};
+
+exports.sendEmailCode = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) throw new Error('Email is required');
+        if (!isValidEmail(email))
+            throw new Error('Email format is invalid');
+
+        req.session.email = email;
+        const code = getCode(req);
+
+        await sendEmail(email, code);
+
+        res.status(200).send('Code sent!');
+    } catch (error) {
+        console.log(error);
+        res.status(400).send(error.message);
+    }
+};
+
+
+exports.verifyEmailCode = async (req, res) => {
+    try {
+        const { code } = req.body;
+        const email = req.session.email;
+
+        const verificationCode = req.session.verification?.code;
+        if (!verificationCode) throw new Error('Code not found! Generate a new code please');
+
+        if (verificationCode !== code) throw new Error('Invalid code. Please make sure that the code is valid.');
+        delete req.session.verificationCode;
+        const user = await User.findOneAndUpdate(
+            { email },
+            { email, verified: true },
+            { upsert: true, new: true, lean: true },
+        );
+        req.session.verified = true;
+        req.session.user = user;
+        res.status(200).send('verified');
     } catch (error) {
         console.log(error);
         res.status(400).send(error.message);

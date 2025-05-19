@@ -14,8 +14,13 @@ const userSchema = new mongoose.Schema(
         },
         phoneNumber: {
             type: String,
-            required: true,
+            required: false,
             unique: true,
+        },
+        email: {
+            type: String,
+            required: true,
+            unique: true
         },
         verified: {
             type: Boolean,

@@ -9,4 +9,7 @@ router.post('/send-code', authController.sendCode);
 router.post('/verify-code', authController.verifyCode);
 router.get('/logout', authController.logout);
 
+router.post('/send-email-code', authController.sendEmailCode);
+router.post('/verify-email-code', authController.verifyEmailCode);
+
 module.exports = router;

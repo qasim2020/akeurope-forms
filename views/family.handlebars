@@ -16,8 +16,8 @@
         <div class="form-container" id="container-send-code" class="d-none">
 
           <div class="mb-3">
-            <label class="form-label">رقم الواتساب مع المقدمة الدولية</label>
-            <input id="tel" type="tel" class="text-center form-control" placeholder="+9705XXXXXXXX" autocomplete="off" dir="ltr"
+            <label class="form-label">ادخل الايميل لارسال رمز التحقق</label>
+            <input id="email" type="text" class="text-center form-control" placeholder="yourname@email.com" autocomplete="off" dir="ltr"
               required>
           </div>
 
@@ -106,16 +106,14 @@
   }
 
   const sendCode = function (elem) {
-    const phone = $('#tel').val();
-    const name = "Not Required";
+    const email = $('#email').val();
 
     $(elem).closest('.form-container').find('.alert').remove();
     $(elem).closest('.form-container').find('.invalid-feedback').remove();
     $(elem).closest('.form-container').find('.is-invalid').removeClass('is-invalid');
 
-    if (!phone || !name) {
-      $('#tel').addClass('is-invalid');
-      $('#name').addClass('is-invalid');
+    if (!email) {
+      $('#email').addClass('is-invalid');
       return;
     }
 
@@ -123,10 +121,10 @@
     $(elem).html(`<span class="spinner-border spinner-border-sm me-2" role="status"></span>`);
 
     $.ajax({
-      url: '/send-code',
+      url: '/send-email-code',
       type: 'POST',
       contentType: 'application/json',
-      data: JSON.stringify({ phone }),
+      data: JSON.stringify({ email }),
       success: function (response) {
         $(elem).html(currentBtnHTML);
         $('#container-send-code').addClass('d-none');
@@ -166,7 +164,7 @@
     $(elem).html(`<span class="spinner-border spinner-border-sm me-2" role="status"></span>`);
 
     $.ajax({
-      url: '/verify-code',
+      url: '/verify-email-code',
       type: 'POST',
       contentType: 'application/json',
       data: JSON.stringify({ code, name }),
