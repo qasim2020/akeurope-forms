@@ -8,6 +8,7 @@ const authenticate = (req, res, next) => {
     return res.status(404).render('error', {
         heading: 'Unauthorized',
         error: 'User is not logged in.',
+        redirect: '/',
     });
 };
 
@@ -22,6 +23,7 @@ const authorize = async (req, res, next) => {
             return res.status(404).render('error', {
                 heading: 'Not Found',
                 error: 'Entry not found.',
+                redirect: '/',
             });
         };
 
@@ -43,6 +45,7 @@ const authorize = async (req, res, next) => {
         return res.status(500).render('error', {
             heading: 'Server Error',
             error: err.message || err.toString(),
+            redirect: '/',
         });
     }
 };

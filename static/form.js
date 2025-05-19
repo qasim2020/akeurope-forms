@@ -372,6 +372,7 @@ const saveForm = async function (elem) {
                 addFieldSuccess(this);
             } catch (error) {
                 console.log(error);
+                isValid = false;
                 const message = error.responseText || error.message || 'Unknown error - handle it';
                 addFieldError(this, message);
             }
@@ -488,7 +489,7 @@ const saveField = async function (fieldName, string) {
         success: (response) => { },
         error: (error) => {
             console.log(error.responseText);
-            alert(error.responseText);
+            throw new Error(error.responseText);
         },
     });
 };

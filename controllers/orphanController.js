@@ -49,6 +49,7 @@ exports.orphan = async (req, res) => {
                 rtl: true,
                 entryId: entry._id,
                 collectionName: 'GazaOrphan',
+                projectSlug: 'gaza-orphans',
                 getRoute: 'get-orphan',
                 newRoute: 'new-orphan',
                 hideSubmitBtn: true,
@@ -61,6 +62,7 @@ exports.orphan = async (req, res) => {
         res.render('error', {
             layout: 'main',
             error: error.message,
+            redirect: '/orphan',
         });
     }
 };

@@ -34,6 +34,7 @@ exports.newFamily = async (req, res) => {
         res.render('error', {
             layout: 'main',
             error: error.message,
+            redirect: '/family'
         });
     }
 };
@@ -53,6 +54,7 @@ exports.family = async (req, res) => {
                 rtl: true,
                 entryId: entry._id,
                 collectionName: 'FamilyArabic',
+                projectSlug: 'egypt-family',
                 getRoute: 'get-family',
                 newRoute: 'new-family',
                 remaining: req.session.user.maxUploads - uploads.length > 0 ? req.session.user.maxUploads - uploads.length : 0
@@ -63,6 +65,7 @@ exports.family = async (req, res) => {
         res.status(400).render('error', {
             layout: 'main',
             error: error.message,
+            redirect: '/family',
         });
     }
 };

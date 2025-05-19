@@ -131,7 +131,13 @@ exports.logout = async (req, res) => {
     if (req.session.user) {
         req.session.destroy((err) => {
             if (err) console.error(err);
-            res.redirect('/');
+            if (req.query.projectSlug === 'egypt-family') {
+                res.redirect('/family');
+            } else if (req.query.projectSlug === 'gaza-orphans') {
+                res.redirect('/orphan');   
+            } else {
+                throw new Error('Invalid project slug');
+            }
         });
     } else {
         res.redirect('/');

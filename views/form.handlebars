@@ -4,7 +4,7 @@
     collection-name="{{data.collectionName}}">
 
     <div class="d-flex align-items-center justify-content-between mb-3">
-      <a href="/logout">تسجيل الخروج</a>
+      <a href="/logout?projectSlug={{data.projectSlug}}">تسجيل الخروج</a>
       {{#if data.showMultipleEntries}}
       <div class="d-flex">
         <div class="dropdown" dir="rtl">
@@ -69,7 +69,8 @@
   </div>
 </div>
 
-<script src="/static/form.js"></script>
 <script>
-
+  const script = document.createElement('script');
+  script.src = `/static/form.js?date=${Date.now()}`;
+  document.head.appendChild(script);
 </script>

@@ -252,6 +252,7 @@ exports.formCompleted = async (req, res) => {
         const { entryId, collectionName } = req.params;
         if (!entryId || !collectionName) throw new Error('Incomplete fields');
         const model = getModel(collectionName);
+        const slug = getSlug(collectionName);
         const entry = await model.findOne({ _id: req.params.entryId, 'uploadedBy.actorId': req.session.user._id }).lean();
         if (!entry) throw new Error('Entry not found');
 
@@ -267,15 +268,12 @@ exports.formCompleted = async (req, res) => {
             type: 'formCompleted',
             entity: entry,
             actor: req.session.user,
-            slug: 'egypt-family',
+            slug,
         }));
         
         res.status(200).send('Form completed');
     } catch (error) {
         console.log(error);
-        res.status(400).render('error', {
-            layout: 'main',
-            error: error.message,
-        });
+        res.status(400).send(error.message);
     }
 };

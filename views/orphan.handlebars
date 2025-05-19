@@ -1,7 +1,7 @@
 <div class="page page-center">
   <div class="container container-tight py-4">
     <div class="text-center mb-4">
-      <a href="." class="navbar-brand navbar-brand-autodark">
+      <a href="/orphan" class="navbar-brand navbar-brand-autodark">
         <img src="/static/images/logo-dark.png" height="64" alt="Tabler" class="navbar-brand-image">
       </a>
     </div>
@@ -10,10 +10,11 @@
         <h2 class="h2 text-center mb-4">التحقق من الهاتف</h2>
 
         <div class="form-container" id="container-send-code" class="d-none">
-          
+
           <div class="mb-3">
             <label class="form-label">ادخل رقم الهاتف</label>
-            <input id="tel" type="tel" class="text-center form-control" placeholder="+9705XXXXXXXX" autocomplete="off" required>
+            <input id="tel" type="tel" class="text-center form-control" placeholder="+9705XXXXXXXX" autocomplete="off"
+              required>
           </div>
 
           <div class="form-footer">
@@ -83,12 +84,12 @@
       const isVerifyCodeContainer = $('#container-verify-code').hasClass('d-none') === false;
       if (isSendCodeContainer) {
         $('#send-code').click();
-      } 
+      }
       if (isVerifyCodeContainer) {
         $('#verify-code').click();
       }
     }
-});
+  });
 
 
   $('.otp-input').on('input', function () {

