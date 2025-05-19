@@ -12,6 +12,7 @@
       <p class="empty-subtitle text-secondary">
        {{{error}}}
       </p>
+      {{#unless hideRedirect}}
       <div class="empty-action">
         <a href="/" class="btn btn-primary">
           <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
@@ -24,6 +25,7 @@
           خذنى إلى المنزل
         </a>
       </div>
+      {{/unless}}
       {{/if}}
     </div>
   </div>

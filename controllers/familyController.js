@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const OrphanArabic = require('../models/OrphanArabic');
 const FamilyArabic = require('../models/FamilyArabic');
 const { generateFormFields } = require('../modules/generateFormFields');
 const { familyFormTranslation: translations} = require('../modules/translations');

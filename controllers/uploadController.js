@@ -3,6 +3,9 @@ const cloudinary = require('cloudinary').v2;
 const File = require('../models/File');
 const fs = require('fs').promises;
 const path = require('path');
+const { saveLog } = require('../modules/logActions');
+const { logTemplates } = require('../modules/logTemplates');
+const { getModel, getSlug } = require('../modules/getModel');
 
 require('dotenv').config();
 
@@ -54,12 +57,11 @@ exports.uploadFile = async (req, res) => {
             return res.status(400).json({ message: 'No file uploaded' });
         }
 
-        let slug;
-
-        if (collectionName === 'FamilyArabic') {
-            slug = 'egypt-family';
-        } else {
-            slug = collectionName.toLowerCase();
+        const slug = getSlug(collectionName);
+        const model = getModel(collectionName);
+        const entry = await model.findOne({ _id: entryId }).lean();
+        if (!entry) {
+            throw new Error('Entry not found');
         }
 
         const file = new File({
@@ -85,6 +87,13 @@ exports.uploadFile = async (req, res) => {
 
         await file.save();
 
+        await saveLog(logTemplates({
+            type: 'fileUploaded',
+            entity: entry,
+            actor: req.session.user,
+            slug,
+        }));
+
         res.status(200).send(file._id);
     } catch (error) {
         console.log(error);
@@ -103,7 +112,7 @@ exports.deleteFile = async (req, res) => {
             return res.status(404).send({ error: 'File not found' });
         }
 
-        const model = mongoose.model(collectionName);
+        const model = getModel(collectionName);
         if (!model) throw new Error('Model not found');
 
         const schemaField = model.schema.path(fieldName);
@@ -144,16 +153,39 @@ exports.fileData = async (req, res) => {
 exports.file = async (req, res) => {
     try {
         let file;
-        file = await File.findOne({ _id: req.params.fileId, 'uploadedBy.actorId': req.session.user._id }).lean();
+        console.log('File ID:', req.params.fileId);
+
+        file = await File.findOne({ _id: req.params.fileId }).lean();
 
         if (!file) {
             return res.status(404).send({ error: 'File not found' });
         }
 
-        const dir = path.join(__dirname, process.env.UPLOADS_DIR);
-        const filePath = path.join(dir, file.path);
+        const dirs = [
+            process.env.UPLOADS_DIR,
+            process.env.PORTAL_UPLOADS_DIR,
+        ];
 
-        res.download(filePath, file.name, (err) => {
+        let filePathFound = null;
+
+        for (const dirName of dirs) {
+            const dir = path.join(__dirname, dirName);
+            const filePath = path.join(dir, file.path);
+
+            try {
+                await fs.access(filePath);
+                filePathFound = filePath;
+                break;
+            } catch (err) {
+                console.log(`Not found in ${dirName}: ${err.message}`);
+            }
+        }
+
+        if (!filePathFound) {
+            throw new Error('File not found in any configured directories.');
+        }
+
+        res.download(filePathFound, file.name, (err) => {
             if (err) {
                 console.error('Error sending file:', err);
                 res.status(500).send({ error: 'Failed to send file' });

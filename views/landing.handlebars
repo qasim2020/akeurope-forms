@@ -1,0 +1,59 @@
+<div class="page page-center">
+  <div class="container container-tight py-4">
+    <div class="text-center mb-4">
+      <a href="." class="navbar-brand navbar-brand-autodark">
+        <img src="/static/images/logo-dark.png" height="64" alt="Tabler" class="navbar-brand-image">
+      </a>
+    </div>
+    <div class="card card-md" dir="rtl">
+      <div class="card-body">
+        <h2 class="h2 text-center mb-6">حدد المشروع</h2>
+
+        <div class="form-container" id="container-send-code" class="d-none">
+
+          <div class="mb-3">
+            <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
+              <label class="form-selectgroup-item flex-fill">
+                <input type="radio" name="form-payment" value="family" class="form-selectgroup-input" checked="">
+                <div class="form-selectgroup-label d-flex align-items-center p-3">
+                  <div class="ms-3">
+                    <span class="form-selectgroup-check"></span>
+                  </div>
+                  <div>
+                    استمارة تسجيل الأسرة
+                  </div>
+                </div>
+              </label>
+              <label class="form-selectgroup-item flex-fill">
+                <input type="radio" name="form-payment" value="orphan" class="form-selectgroup-input">
+                <div class="form-selectgroup-label d-flex align-items-center p-3">
+                  <div class="ms-3">
+                    <span class="form-selectgroup-check"></span>
+                  </div>
+                  <div>
+                    كفالة أيتام غزة
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button id="send-code" class="btn btn-primary w-100" onclick="openProject(this)">تمام</button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  function openProject(button) {
+    const selectedProject = document.querySelector('input[name="form-payment"]:checked').value;
+    const url = selectedProject === 'family' ? '/family' : '/orphan';
+    window.location.href = url;
+  }
+</script>

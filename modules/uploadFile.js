@@ -19,13 +19,18 @@ const uploadFile = multer({
     }),
     fileFilter: (req, file, cb) => {
         const allowedTypes = [
-            'application/pdf', 
-            'image/jpeg',      
-            'image/png',       
-            'image/webp',      
-            'image/tiff',      
+            'application/pdf',
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'image/tiff',
+            'video/mp4',
+            'video/webm',
+            'video/ogg',
+            'video/quicktime',      
+            'video/x-msvideo',     
         ];
-        
+
         if (!allowedTypes.includes(file.mimetype)) {
             return cb(new Error('Only PDF, JPG, PNG, WebP, and TIFF files are allowed'));
         }

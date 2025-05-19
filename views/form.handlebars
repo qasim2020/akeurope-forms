@@ -1,10 +1,11 @@
 <div class="page">
 
-  <div class="container col-12 col-lg-10 col-xl-6 py-4" id="entry-container" entry-id="{{data.entryId}}" collection-name="{{data.collectionName}}">
+  <div class="container col-12 col-lg-10 col-xl-6 py-4" id="entry-container" entry-id="{{data.entryId}}"
+    collection-name="{{data.collectionName}}">
 
     <div class="d-flex align-items-center justify-content-between mb-3">
       <a href="/logout">تسجيل الخروج</a>
-{{!-- 
+      {{#if data.showMultipleEntries}}
       <div class="d-flex">
         <div class="dropdown" dir="rtl">
           <button class="btn btn-outline w-100" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
@@ -26,33 +27,42 @@
           </ul>
         </div>
 
-        {{#if (gt data.remaining 0)}}
+        {{!-- {{#if (gt data.remaining 0)}}
         <a href="/{{data.newRoute}}" class="btn btn-primary-outline border-1 border-blue ms-2 w-100" type="button">
           <span class="d-none d-md-inline-block">اضافة يتيم جديد</span>
           <span class="d-inline-block d-md-none"><i class="ti ti-plus"></i></span>
         </a>
-        {{/if}}
-      </div> --}}
+        {{/if}} --}}
+      </div>
+      {{/if}}
 
     </div>
+
+    {{#unless data.showMultipleEntries}}
 
     <div class="card mb-3" {{#if data.rtl}}dir="rtl" {{/if}}>
       <div class="card-body">
-        {{!-- <p class="text-small">يمكنك إضافة <span class="fw-bold">{{data.remaining}}</span> إدخالات أخرى. لإضافة أكثر من
+        {{!-- <p class="text-small">يمكنك إضافة <span class="fw-bold">{{data.remaining}}</span> إدخالات أخرى. لإضافة
+          أكثر من
           ذلك يرجى الاتصال بنا على <a href="mailto:info@akeurope.org">info@akeurope.org</a>
         </p> --}}
-        <p class="text-small">ملاحظة: في حال تقدمت الاسرة بأي معلومات غير صحيحة سيتم الغاء الطلب بالكامل وتفقد الاسرة حقها في الحصول على اي مساعدة مستقبلية من الجمعية</p>
+        <p class="text-small">ملاحظة: في حال تقدمت الاسرة بأي معلومات غير صحيحة سيتم الغاء الطلب بالكامل وتفقد الاسرة
+          حقها في الحصول على اي مساعدة مستقبلية من الجمعية</p>
       </div>
     </div>
+    {{/unless}}
+
 
     <div class="card">
       <div class="card-body">
         <div class="mb-3" {{#if data.rtl}}dir="rtl" {{/if}}>
           {{{data.formFields}}}
         </div>
+        {{#unless data.showMultipleEntries}}
         <div class="form-footer">
           <button class="btn btn-primary w-100" onclick="saveForm(this)">تسجيل</button>
         </div>
+        {{/unless}}
         </form>
       </div>
     </div>

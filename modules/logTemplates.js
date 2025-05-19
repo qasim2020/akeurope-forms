@@ -14,13 +14,23 @@ const logTemplates = ({ type, entity, actor, slug, changes }) => {
 
     const templates = {
         formCreated: slug ? {
-            ...commons('entry', entity._id),
+            ...commons('beneficiary', entity._id),
             action: `<a href="/entry/${entity._id}/project/${slug}">New form</a> created.`,
             color: 'orange',
         } : null,
         formCompleted: slug ? {
+<<<<<<< Updated upstream
             ...commons('entry', entity._id),
             action: `<a href="/entry/${entity._id}/project/${slug}">Form</a> completed.`,
+=======
+            ...commons('beneficiary', entity._id),
+            action: `<a href="/entry/${entity._id}/project/${slug}">Form</a> submitted.`,
+            color: 'orange',
+        } : null,
+        fileUploaded: slug ? {
+            ...commons('beneficiary', entity._id),
+            action: `File uploaded for <a href="/entry/${entity._id}/project/${slug}">${entity.name || 'entry'}</a>.`,
+>>>>>>> Stashed changes
             color: 'orange',
         } : null,
     };

@@ -10,12 +10,7 @@
         <h2 class="h2 text-center mb-4">التحقق من الهاتف</h2>
 
         <div class="form-container" id="container-send-code" class="d-none">
-
-          <div class="mb-3">
-            <label class="form-label">ما اسمك؟</label>
-            <input id="name" type="text" class="text-center form-control" placeholder="الاسم" autocomplete="off" required>
-          </div>
-
+          
           <div class="mb-3">
             <label class="form-label">ادخل رقم الهاتف</label>
             <input id="tel" type="tel" class="text-center form-control" placeholder="+9705XXXXXXXX" autocomplete="off" required>
@@ -107,15 +102,13 @@
 
   const sendCode = function (elem) {
     const phone = $('#tel').val();
-    const name = $('#name').val();
 
     $(elem).closest('.form-container').find('.alert').remove();
     $(elem).closest('.form-container').find('.invalid-feedback').remove();
     $(elem).closest('.form-container').find('.is-invalid').removeClass('is-invalid');
 
-    if (!phone || !name) {
+    if (!phone) {
       $('#tel').addClass('is-invalid');
-      $('#name').addClass('is-invalid');
       return;
     }
 
@@ -147,7 +140,6 @@
     const code = $('.otp-input').map(function () {
       return $(this).val();
     }).get().join('');
-    const name = $('#name').val();
 
     $(elem).closest('.form-container').find('.alert').remove();
     $(elem).closest('.form-container').find('.invalid-feedback').remove();
@@ -169,7 +161,7 @@
       url: '/verify-code',
       type: 'POST',
       contentType: 'application/json',
-      data: JSON.stringify({ code, name }),
+      data: JSON.stringify({ code }),
       success: function (response) {
         $(elem).after('.alert-danger').remove();
         window.location.href = '/orphan';

@@ -5,19 +5,30 @@ const OpenAI = require('openai');
 const twilioClient = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const User = require('../models/User');
-const OrphanArabic = require('../models/OrphanArabic');
+const GazaOrphan = require('../models/GazaOrphan');
+
 const FamilyArabic = require('../models/FamilyArabic');
 
 exports.landing = async (req, res) => {
-    return res.redirect('/family');
+    return res.render('landing');
 };
 
 exports.orphan = async (req, res) => {
     if (!req.session.user) return res.render('orphan', { layout: 'main' });
 
-    const latest = await OrphanArabic.findOne({ 'uploadedBy.actorId': req.session.user._id }).sort({ updatedAt: -1 });
+    const latest = await GazaOrphan.findOne({
+        $or: [
+            { phoneNo1: req.session.user.phoneNumber },
+            { phoneNo2: req.session.user.phoneNumber }
+        ]
+    }).sort({ updatedAt: -1 });
 
-    if (!latest) return res.redirect(`/new-orphan`);
+    if (!latest) return res.status(404).render('error', {
+        layout: 'main',
+        hideRedirect: true,
+        heading: 'Not Found',
+        error: `No data found for <br> ${req.session.user.phoneNumber}.`,
+    });
 
     res.redirect(`/get-orphan/${latest._id}`);
 };

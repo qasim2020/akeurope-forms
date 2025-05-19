@@ -4,6 +4,7 @@ const { camelCaseToNormalString } = require('../modules/helpers');
 const { saveLog } = require('../modules/logActions');
 const { logTemplates } = require('../modules/logTemplates');
 const { getChanges } = require('../modules/getChanges');
+const { getModel, getSlug } = require('../modules/getModel');
 
 function checkMaskPattern(maskPatterns, fieldValue) {
     if (typeof maskPatterns === 'string' && maskPatterns.indexOf(',') > -1) {
@@ -18,8 +19,6 @@ function checkMaskPattern(maskPatterns, fieldValue) {
         a: '[a-z]',
         '*': '[A-Za-z0-9]',
     };
-
-    console.log(maskPatterns);
 
     return maskPatterns.some(maskPattern => {
         let regexStr = '';
@@ -127,7 +126,6 @@ const addInStaticArrayField = async (model, fieldName, value, entryId, req) => {
             if (!newValues || newValues.length === 0)
                 throw new Error('new values should be comma split - but getting no value here - please check');
             const addition = newValues.filter(val => existingValues.includes(val) === false);
-            console.log(existingValues, newValues, addition);
             if (!addition || addition.length === 0)
                 throw new Error('no new values - why calling this function please check');
             const saveNow = [...existingValues, ...addition];
@@ -162,13 +160,9 @@ exports.saveField = async (req, res) => {
             string = gotString.trim();
         }
         if (!fieldName || !string || !entryId || !collectionName) throw new Error('Incomplete fields');
-        const model = mongoose.model(collectionName);
+        const model = getModel(collectionName);
         if (!model) throw new Error('Model not found');
-        if (collectionName === 'FamilyArabic') {
-            slug = 'egypt-family';
-        } else {
-            slug = collectionName.toLowerCase();
-        }
+        const slug = getSlug(collectionName);
         await saveFieldInForm(model, fieldName, string, entryId, req, slug);
         res.status(200).send('saved');
     } catch (error) {
@@ -190,7 +184,7 @@ exports.saveArrayField = async (req, res) => {
             throw new Error('Incomplete fields');
         }
 
-        const model = mongoose.model(collectionName);
+        const model = getModel(collectionName);
         if (!model) throw new Error('Model not found');
 
         const schemaField = model.schema.path(fieldName);
@@ -219,7 +213,7 @@ exports.validateField = async (req, res) => {
             string = gotString.trim();
         }
         if (!fieldName || !string || !entryId) throw new Error('Incomplete fields');
-        const model = mongoose.model(collectionName);
+        const model = getModel(collectionName);
         const existing = await model.findOne({
             [fieldName]: string,
             _id: { $ne: entryId },
@@ -240,7 +234,7 @@ exports.deleteFieldValue = async (req, res) => {
         const { entryId, collectionName } = req.params;
         const { fieldName } = req.body;
         if (!fieldName || !entryId || !collectionName) throw new Error('Incomplete fields');
-        const model = mongoose.model(collectionName);
+        const model = getModel(collectionName);
         if (!model) throw new Error('Model not found');
         const schemaField = model.schema.path(fieldName);
         if (schemaField?.options?.static)
@@ -257,7 +251,7 @@ exports.formCompleted = async (req, res) => {
     try {
         const { entryId, collectionName } = req.params;
         if (!entryId || !collectionName) throw new Error('Incomplete fields');
-        const model = mongoose.model(collectionName);
+        const model = getModel(collectionName);
         const entry = await model.findOne({ _id: req.params.entryId, 'uploadedBy.actorId': req.session.user._id }).lean();
         if (!entry) throw new Error('Entry not found');
 

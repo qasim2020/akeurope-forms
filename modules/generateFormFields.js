@@ -1,10 +1,25 @@
 const File = require('../models/File');
 const { shortenFileName } = require('../modules/helpers');
 
-function createPhotoField(photoKey, useTranslation, value = '', translations) {
+function createPhotoField(photoKey, field, useTranslation, value = '', translations) {
     const photoLabel = useTranslation ? translations[photoKey] || photoKey : photoKey;
+    const isStaticField = field.options?.static ? true : false; 
 
-    return `
+    if (value && isStaticField) {
+   return `
+        <div class="mb-3 field">
+            <label for="${photoKey}" class="form-label">${photoLabel}</label>
+            <div class="image-controller row text-center bg-secondary-lt justify-content-center d-flex align-items-center border rounded p-3" style="margin: 0 0.5px">
+                <div class="col-md-6 mb-2 mb-md-0">
+                    <img class="img-thumbnail" src="${ value }" alt="" style="max-width: 200px;">
+                    <input type="file" class="form-control d-none" name="${photoKey}" accept="image/*"> 
+                    <input class="cloudinaryUrl field-control d-none" name="${photoKey}" value="${value}"> 
+                </div>
+            </div>
+        </div>
+    `;
+    } else {
+   return `
         <div class="mb-3 field">
             <label for="${photoKey}" class="form-label">${photoLabel}</label>
             <div onclick="uploadImage(this)" class="image-controller cursor-pointer image-upload row text-center bg-secondary-lt justify-content-center d-flex align-items-center border rounded p-3" style="margin: 0 0.5px">
@@ -28,6 +43,9 @@ function createPhotoField(photoKey, useTranslation, value = '', translations) {
             </div>
         </div>
     `;
+    }
+
+ 
 }
 
 function createRadioField(key, field, useTranslation, fieldValue = '', translations) {
@@ -135,9 +153,8 @@ async function createAttachmentsField(key, field, useTranslation, value = '', tr
     const isStaticField = field.options?.static ? true : false;
     let btnGroups = '',
         uploadBtnText = '';
-    if (value.length !== 0) {
-        const fileIds = value;
-        const files = await File.find({ 'links.entityId': entryId, access: 'beneficiary' }).lean();
+    const files = await File.find({ 'links.entityId': entryId, access: 'beneficiary' }).lean();
+    if (files.length !== 0) {
         uploadBtnText = 'إضافة مرفق جديد';
         btnGroups = files
             .map(
@@ -157,6 +174,7 @@ async function createAttachmentsField(key, field, useTranslation, value = '', tr
     } else {
         uploadBtnText = 'انقر للتحميل';
     }
+    const uploadVideos = field.options?.videos ? true : false;
     return `
     <div class="mb-3 field" is-static='${isStaticField}' field-name="${key}">
         <label for="${key}" class="form-label">${label}</label>
@@ -166,7 +184,7 @@ async function createAttachmentsField(key, field, useTranslation, value = '', tr
                 ${uploadBtnText}
             </button>
             <input type="file" class="form-control d-none" id="${key}" name="${key}" 
-                accept="application/pdf,image/jpeg,image/png,image/webp,image/tiff">
+                accept="${uploadVideos ? 'application/pdf,image/jpeg,image/png,image/webp,image/tiff,video/*' : 'application/pdf,image/jpeg,image/png,image/webp,image/tiff'}">
             <input type="text" class="form-control field-control d-none" name="${key}" value="${value}"/>
             ${btnGroups}
         </div>
@@ -225,7 +243,7 @@ async function generateFormFields(schema, data = {}, useTranslation = false, tra
                 } else if (field.options.fieldType === 'file') {
                     fieldHtml = await createFileInputField(key, field, useTranslation, existingValue, translations, collectionName, entryId);
                 } else if (field.options.fieldType === 'photo') {
-                    fieldHtml = createPhotoField(key, useTranslation, existingValue, translations);
+                    fieldHtml = createPhotoField(key, field, useTranslation, existingValue, translations);
                 } else {
                     fieldHtml =
                         field.enumValues && field.enumValues.length

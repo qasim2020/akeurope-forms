@@ -34,9 +34,10 @@ const orphanFormTranslation = {
     orphanOldAddress: 'عنوان اليتيم السابق',
     relationToTheOrphan: 'صلة القرابة باليتيم',
     dateOfRegistration: 'تاريخ التسجيل',
-    photoOfOrphan: 'صورة اليتيم',
+    photo: 'صورة اليتيم',
     birthCertificate: 'شهادة الميلاد',
     fatherDeathCertificate: 'شهادة وفاة الأب',
+    attachments: 'الصور والفيديوهات أدناه، التي تخص اليتيم، جمعناها عبر واتساب. نرجو منكم مشاركة التحديثات الدورية على شكل صور أو فيديوهات عنه لنطمئن على صحته ونعرضها على كفيله. حفظكم الله ورعاكم. آمين'
 };
 
 module.exports = { familyFormTranslation, orphanFormTranslation };
