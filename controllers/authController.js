@@ -81,11 +81,11 @@ exports.sendCode = async (req, res) => {
         req.session.phone = formattedPhone;
         const code = getCode(req);
 
-        await twilioClient.messages.create({
-            body: `Alkhidmat Europe Authentication: \n\n${code} is your verification code. For your security, do not share this code.`,
-            from: process.env.TWILIO_NO,
-            to: formattedPhone,
-        });
+        // await twilioClient.messages.create({
+        //     body: `Alkhidmat Europe Authentication: \n\n${code} is your verification code. For your security, do not share this code.`,
+        //     from: process.env.TWILIO_NO,
+        //     to: formattedPhone,
+        // });
 
         await twilioClient.messages.create({
             from: `whatsapp:${process.env.TWILIO_NO}`,
