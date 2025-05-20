@@ -108,7 +108,7 @@ exports.sendEmailCode = async (req, res) => {
         const { email } = req.body;
         if (!email) throw new Error('Email is required');
         if (!isValidEmail(email))
-            throw new Error('Email format is invalid');
+            throw new Error(`Email ${email} is an invalid.`);
 
         req.session.email = email;
         const code = getCode(req);
@@ -131,7 +131,7 @@ exports.verifyEmailCode = async (req, res) => {
         const verificationCode = req.session.verification?.code;
         if (!verificationCode) throw new Error('Code not found! Generate a new code please');
 
-        if (verificationCode !== code) throw new Error('Invalid code. Please make sure that the code is valid.');
+        if (verificationCode !== code) throw new Error(`Verification code: "${code}", is incorrect.`);
         delete req.session.verificationCode;
         const user = await User.findOneAndUpdate(
             { email },

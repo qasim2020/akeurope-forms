@@ -74,18 +74,19 @@ app.use((req, res, next) => {
         return oldJson.apply(res, arguments);
     };
 
+    const forbiddenErrors = ['/overlay/fonts/Karla-regular.woff', '/robots.txt'];
+
     res.on('finish', () => {
-        if (res.statusCode > 399) {
+        if (res.statusCode > 399 && !forbiddenErrors.includes(req.originalUrl)) {
             const errorData = {
                 message: responseBody,
                 status: res.statusCode,
                 url: req.originalUrl,
             };
-
+            console.log(responseBody);
             sendErrorToTelegram(errorData);
         }
     });
-    next();
 });
 
 const uploadRoutes = require('./routes/uploadRoutes');
