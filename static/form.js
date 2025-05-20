@@ -9,7 +9,53 @@ $(document).ready(function () {
             hideShowFields(connections, value);
         }
     });
+    handleSubmitBtn();
 });
+
+const handleSubmitBtn = function () {
+    let fieldStatuses = [];
+    $('#entry-container .field-control').each(async function () {
+        const isHidden = $(this).closest('.field').hasClass('d-none');
+        if (isHidden) {
+            fieldStatuses.push('done');
+            return;
+        };
+        const fieldValue = $(this).val() || $(this).find('[type=radio]:checked').val();
+        if (fieldValue) {
+            const isRadioBtn = $(this).find('[type=radio]:checked').val();
+            const isUniqueField = $(this).attr('is-unique') === 'true';
+            const isStaticField = $(this).attr('is-static') === 'true';
+            const isFilesController = $(this).closest('.attachments-controller').length > 0;
+
+            if (isUniqueField) {
+                fieldStatuses.push('done');
+            } else if (isStaticField) {
+                fieldStatuses.push('done');
+            } else if (!isFilesController) {
+                fieldStatuses.push('done');
+            } else if (isFilesController) {
+                const filesUploaded = $(this).closest('.attachments-controller').find('.btn-group').get().length > 0;
+                if (filesUploaded) {
+                    fieldStatuses.push('done');
+                } else {
+                    fieldStatuses.push('pending');
+                }
+            } else if (isRadioBtn) {
+                fieldStatuses.push('pending');
+            } else {
+                fieldStatuses.push('pending');
+            }
+        } else {
+            debugger;
+            fieldStatuses.push('pending');
+        }
+    });
+
+    const formCompleted = fieldStatuses.every(val => val === 'done');
+    if (formCompleted) {
+        $('#save-form-btn').addClass('d-none');
+    }
+}
 
 const handleConnections = function (elem) {
     const connectionsString = $(elem).closest('.field').attr('connections');
@@ -369,6 +415,13 @@ const saveForm = async function (elem) {
                     convertRadioToInput(this, fieldName, fieldValue, isStaticField, dir);
                 }
 
+                if (isFilesController) {
+                    const filesUploaded = $(this).closest('.attachments-controller').find('.btn-group').get().length > 0;
+                    if (!filesUploaded) {
+                        throw new Error('Invalid entry');
+                    };
+                }
+
                 addFieldSuccess(this);
             } catch (error) {
                 console.log(error);
@@ -390,6 +443,7 @@ const saveForm = async function (elem) {
             <div class="alert alert-danger border-end mt-4" dir="rtl" role="alert">
               <h4 class="alert-title">الرجاء إدخال كافة حقول النموذج</h4>
             </div>`);
+        handleSubmitBtn();
     } else {
         $(elem).addClass('bg-success');
         $(elem).after(`

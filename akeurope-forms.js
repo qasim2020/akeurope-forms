@@ -87,6 +87,8 @@ app.use((req, res, next) => {
             sendErrorToTelegram(errorData);
         }
     });
+
+    next();
 });
 
 const uploadRoutes = require('./routes/uploadRoutes');

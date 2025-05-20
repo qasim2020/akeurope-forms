@@ -220,7 +220,7 @@ exports.validateField = async (req, res) => {
         }).lean();
         if (existing) {
             const actor = await User.findById(existing.uploadedBy?.actorId).lean()
-            throw new Error(`${camelCaseToNormalString(fieldName)}: ${string} is connected with ${actor.phoneNumber} in another form. Therefore should not be added here.`);
+            throw new Error(`${camelCaseToNormalString(fieldName)}: ${string} is connected with ${actor.phoneNumber || actor.email} in another form. Therefore should not be added here.`);
         }
         res.status(200).send('Go ahead, save this entry');
     } catch (error) {
