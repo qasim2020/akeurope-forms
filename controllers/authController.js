@@ -36,7 +36,7 @@ exports.orphan = async (req, res) => {
 };
 
 exports.family = async (req, res) => {
-    if (!req.session.user) return res.render('family', { layout: 'main' });
+    if (!req.session.user?.verified) return res.render('family', { layout: 'main' });
 
     const latest = await FamilyArabic.findOne({ 'uploadedBy.actorId': req.session.user._id }).sort({ updatedAt: -1 });
 

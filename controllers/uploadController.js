@@ -153,9 +153,9 @@ exports.fileData = async (req, res) => {
 exports.file = async (req, res) => {
     try {
         let file;
-        console.log('File ID:', req.params.fileId);
+        console.log('File ID:', req.params.fileId,);
 
-        file = await File.findOne({ _id: req.params.fileId }).lean();
+        file = await File.findOne({ _id: req.params.fileId, 'uploadedBy.actorId': req.session.user._id }).lean();
 
         if (!file) {
             return res.status(404).send({ error: 'File not found' });
@@ -191,6 +191,128 @@ exports.file = async (req, res) => {
                 res.status(500).send({ error: 'Failed to send file' });
             }
         });
+    } catch (error) {
+        console.log(error);
+        res.status(500).send(error.toString());
+    }
+};
+
+
+
+exports.uploadFileOpen = async (req, res) => {
+    try {
+        const { collectionName, entryId } = req.params;
+
+        const fileMulter = req.file;
+
+        if (!fileMulter) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        const slug = getSlug(collectionName);
+        const model = getModel(collectionName);
+        console.log(model);
+        const entry = await model.findOne({ _id: entryId }).lean();
+        if (!entry) {
+            throw new Error('Entry not found');
+        }
+
+        const file = new File({
+            links: [
+                {
+                    entityType: 'entry',
+                    entityId: entryId,
+                    entityUrl: `/entry/${entryId}/project/${slug}`,
+                }
+            ],
+            access: ['editor', 'beneficiary'],
+            category: 'general',
+            name: fileMulter.originalname,
+            size: fileMulter.size / 1000,
+            path: fileMulter.filename,
+            mimeType: fileMulter.mimetype,
+            uploadedBy: {
+                actorType: 'benificiary',
+                actorId: req.session.user._id,
+                actorUrl: `/benificiary/${req.session.user._id}`,
+            },
+        });
+
+        await file.save();
+
+        await saveLog(logTemplates({
+            type: 'fileUploadedOpen',
+            entity: entry,
+            actor: req.session.user,
+            slug,
+        }));
+
+        res.status(200).send(file._id);
+    } catch (error) {
+        console.log(error);
+        res.status(500).send(error.toString());
+    }
+};
+
+
+exports.fileOpen = async (req, res) => {
+    try {
+        let file;
+        console.log('File ID:', req.params.fileId);
+
+        file = await File.findOne({ _id: req.params.fileId, "uploadedBy.actorId": req.session.user._id }).lean();
+
+        if (!file) {
+            return res.status(404).send({ error: 'File not found' });
+        }
+
+        const dirs = [
+            process.env.UPLOADS_DIR,
+            process.env.PORTAL_UPLOADS_DIR,
+        ];
+
+        let filePathFound = null;
+
+        for (const dirName of dirs) {
+            const dir = path.join(__dirname, dirName);
+            const filePath = path.join(dir, file.path);
+
+            try {
+                await fs.access(filePath);
+                filePathFound = filePath;
+                break;
+            } catch (err) {
+                console.log(`Not found in ${dirName}: ${err.message}`);
+            }
+        }
+
+        if (!filePathFound) {
+            throw new Error('File not found in any configured directories.');
+        }
+
+        res.download(filePathFound, file.name, (err) => {
+            if (err) {
+                console.error('Error sending file:', err);
+                res.status(500).send({ error: 'Failed to send file' });
+            }
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).send(error.toString());
+    }
+};
+
+exports.fileDataOpen = async (req, res) => {
+    try {
+        let file;
+        file = await File.findOne({ _id: req.params.fileId, 'uploadedBy.actorId': req.session.user._id }).lean();
+
+        if (!file) {
+            return res.status(404).send({ error: 'File not found' });
+        }
+
+        res.status(200).send(file);
+
     } catch (error) {
         console.log(error);
         res.status(500).send(error.toString());

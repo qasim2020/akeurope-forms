@@ -12,4 +12,8 @@ router.post('/upload-image/:collectionName/:entryId', authenticate, authorize, u
 router.post('/upload-file/:collectionName/:entryId', authenticate, authorize, uploadFile.single('file'), uploadController.uploadFile);
 router.post('/delete-file/:collectionName/:entryId/:fileId/:fieldName', authenticate, authorize, uploadController.deleteFile);
 
+router.get('/file-open/:collectionName/:entryId/:fileId', uploadController.fileOpen);
+router.get('/file-data-open/:collectionName/:entryId/:fileId', uploadController.fileDataOpen);
+router.post('/upload-file-open/:collectionName/:entryId', uploadFile.single('file'), uploadController.uploadFileOpen);
+
 module.exports = router;

@@ -1,0 +1,30 @@
+<div class="page">
+
+  <div class="container col-12 col-lg-10 col-xl-6 py-4" id="entry-container" entry-id="{{data.entryId}}"
+    collection-name="{{data.collectionName}}">
+
+    <div class="card mb-3" {{#if data.rtl}}dir="rtl" {{/if}}>
+      <div class="card-body">
+        <p class="text-small">ملاحظة: في حال تقدمت الاسرة بأي معلومات غير صحيحة سيتم الغاء الطلب بالكامل وتفقد الاسرة
+          حقها في الحصول على اي مساعدة مستقبلية من الجمعية</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="mb-3" {{#if data.rtl}}dir="rtl" {{/if}}>
+          {{{data.formFields}}}
+        </div>
+        <div class="form-footer">
+          <button id="save-form-btn" class="btn btn-primary w-100" onclick="saveForm(this)">تسجيل</button>
+        </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const script = document.createElement('script');
+  script.src = `/static/formOpen.js?date=${Date.now()}`;
+  document.head.appendChild(script);
+</script>

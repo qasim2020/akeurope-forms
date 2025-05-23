@@ -29,6 +29,11 @@ const logTemplates = ({ type, entity, actor, slug, changes }) => {
             action: `File uploaded for <a href="/entry/${entity._id}/project/${slug}">${entity.name || 'entry'}</a>.`,
             color: 'orange',
         } : null,
+        fileUploadedOpen: slug ? {
+            ...commons('beneficiary', entity._id),
+            action: `File uploaded for <a href="/entry/${entity._id}/project/${slug}">${entity.name || 'entry'}</a>.`,
+            color: 'orange',
+        } : null,
     };
 
     if (templates[type] == null) {

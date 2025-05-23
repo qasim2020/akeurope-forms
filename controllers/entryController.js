@@ -153,6 +153,9 @@ exports.saveField = async (req, res) => {
     try {
         const { entryId, collectionName } = req.params;
         const { fieldName, string: gotString } = req.body;
+        const model = getModel(collectionName);
+        const entry = await model.findOne({_id: entryId, 'uploadedBy.actorId': req.session.user._id}).lean();
+        if (!entry) throw new Error('Entry not found in session');
         let string;
         if (Array.isArray(gotString)) {
             string = gotString.map(s => s.trim()).filter(s => s);
@@ -160,8 +163,6 @@ exports.saveField = async (req, res) => {
             string = gotString.trim();
         }
         if (!fieldName || !string || !entryId || !collectionName) throw new Error('Incomplete fields');
-        const model = getModel(collectionName);
-        if (!model) throw new Error('Model not found');
         const slug = getSlug(collectionName);
         await saveFieldInForm(model, fieldName, string, entryId, req, slug);
         res.status(200).send('saved');
@@ -184,8 +185,10 @@ exports.saveArrayField = async (req, res) => {
             throw new Error('Incomplete fields');
         }
 
+
         const model = getModel(collectionName);
-        if (!model) throw new Error('Model not found');
+        const entry = await model.findOne({_id: entryId, 'uploadedBy.actorId': req.session.user._id}).lean();
+        if (!entry) throw new Error('Entry not found in session');
 
         const schemaField = model.schema.path(fieldName);
 
@@ -213,14 +216,16 @@ exports.validateField = async (req, res) => {
             string = gotString.trim();
         }
         if (!fieldName || !string || !entryId) throw new Error('Incomplete fields');
-        const model = getModel(collectionName);
+        const model = getModel(collectionName); 
+        const entry = await model.findOne({_id: entryId, 'uploadedBy.actorId': req.session.user._id}).lean();
+        if (!entry) throw new Error('Entry not found in session'); 
         const existing = await model.findOne({
             [fieldName]: string,
             _id: { $ne: entryId },
         }).lean();
         if (existing) {
-            const actor = await User.findById(existing.uploadedBy?.actorId).lean()
-            throw new Error(`${camelCaseToNormalString(fieldName)}: ${string} is connected with ${actor.phoneNumber || actor.email} in another form. Therefore should not be added here.`);
+            const actor = await User.findById(existing.uploadedBy?.actorId).lean();
+            throw new Error(`${camelCaseToNormalString(fieldName)}: ${string} is connected with ${actor.phoneNumber || actor.email || actor.ipCountry} in another form. Therefore should not be added here.`);
         }
         res.status(200).send('Go ahead, save this entry');
     } catch (error) {

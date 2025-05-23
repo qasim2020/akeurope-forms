@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 const FamilyArabic = require('../models/FamilyArabic');
+const User = require('../models/User');
 const { generateFormFields } = require('../modules/generateFormFields');
-const { familyFormTranslation: translations} = require('../modules/translations');
+const { familyFormTranslation: translations } = require('../modules/translations');
 const { saveLog } = require('../modules/logActions');
 const { logTemplates } = require('../modules/logTemplates');
 
@@ -41,7 +42,7 @@ exports.newFamily = async (req, res) => {
 
 exports.family = async (req, res) => {
     try {
-        const entry = await FamilyArabic.findOne({_id: req.params.entryId, 'uploadedBy.actorId': req.session.user._id}).lean();
+        const entry = await FamilyArabic.findOne({ _id: req.params.entryId, 'uploadedBy.actorId': req.session.user._id }).lean();
         if (!entry) throw new Error('Family data not found');
         const formFields = await generateFormFields(FamilyArabic.schema, entry, true, translations, 'FamilyArabic', entry._id);
         const uploads = await FamilyArabic.find({ 'uploadedBy.actorId': req.session.user._id }).lean();
@@ -69,3 +70,62 @@ exports.family = async (req, res) => {
         });
     }
 };
+
+exports.familyOpen = async (req, res) => {
+    try {
+        let entry;
+        let createNewEntry = false;
+        if (req.session?.user) {
+            entry = await FamilyArabic.findOne({ 'uploadedBy.actorId': req.session.user._id }).sort({ updatedAt: -1 });
+            if (!entry) {
+                createNewEntry = true;
+            }
+        } else {
+            const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+            const countryCode = req.headers['cf-ipcountry'] || 'UNKNOWN';
+            const ipCountry = `${ip}-${countryCode}`;
+            const user = await User.findOneAndUpdate(
+                { ipCountry },
+                {
+                    ipCountry,
+                    verified: false
+                },
+                { upsert: true, new: true }
+            );
+            req.session.user = user;
+            createNewEntry = true;
+        }
+        if (createNewEntry) {
+            const entryId = new mongoose.Types.ObjectId();
+            entry = new FamilyArabic({
+                _id: entryId,
+                uploadedBy: {
+                    actorType: 'user',
+                    actorId: req.session.user._id,
+                    actorUrl: `/user/${req.session.user._id}`,
+                },
+            });
+            await entry.save();
+        }
+
+        const formFields = await generateFormFields(FamilyArabic.schema, entry, true, translations, 'FamilyArabic', entry._id);
+        res.render('formOpen', {
+            layout: 'main',
+            data: {
+                timestamp: Date.now(),
+                formFields,
+                rtl: true,
+                entryId: entry._id,
+                collectionName: 'FamilyArabic',
+                projectSlug: 'egypt-family',
+            },
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).render('error', {
+            layout: 'main',
+            error: error.message,
+            redirect: '/family',
+        });
+    }
+}

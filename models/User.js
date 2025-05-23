@@ -12,15 +12,21 @@ const userSchema = new mongoose.Schema(
         project: {
             type: [String],
         },
+        ipCountry: {
+            type: String,
+            required: true,
+        },
         phoneNumber: {
             type: String,
             required: false,
             unique: true,
+            sparse: true,
         },
         email: {
             type: String,
             required: true,
-            unique: true
+            unique: true,
+            sparse: true,
         },
         verified: {
             type: Boolean,
