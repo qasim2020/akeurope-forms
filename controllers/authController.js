@@ -108,7 +108,7 @@ exports.sendEmailCode = async (req, res) => {
         const { email } = req.body;
         if (!email) throw new Error('Email is required');
         if (!isValidEmail(email))
-            throw new Error(`Email ${email} is an invalid.`);
+            throw new Error(`Email ${email} is invalid.`);
 
         req.session.email = email;
         const code = getCode(req);

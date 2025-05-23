@@ -443,7 +443,6 @@ const saveForm = async function (elem) {
             <div class="alert alert-danger border-end mt-4" dir="rtl" role="alert">
               <h4 class="alert-title">الرجاء إدخال كافة حقول النموذج</h4>
             </div>`);
-        handleSubmitBtn();
     } else {
         $(elem).addClass('bg-success');
         $(elem).after(`
@@ -458,6 +457,7 @@ const saveForm = async function (elem) {
                 method: 'POST',
                 contentType: 'application/json',
             })
+            handleSubmitBtn();
         } catch (error) {
             console.log(error);
             alert(error.responseText || error.toString() || 'Server Error, please send us an email of this error');

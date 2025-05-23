@@ -13,7 +13,7 @@ const sendEmail = async (email, code) => {
     const compiledTemplate = handlebars.compile(templateSource);
     
     const mailOptions = {
-        from: process.env.EMAIL_USER,
+        from: `"Alkhidmat Europe" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: 'Alkhidmat Europe - Verification Code',
         html: compiledTemplate({

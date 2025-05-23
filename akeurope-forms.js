@@ -83,8 +83,7 @@ app.use((req, res, next) => {
                 status: res.statusCode,
                 url: req.originalUrl,
             };
-            console.log(responseBody);
-            sendErrorToTelegram(errorData);
+            console.log(errorData);
         }
     });
 
