@@ -16,6 +16,7 @@ const authorize = async (req, res, next) => {
     const { collectionName, entryId } = req.params;
 
     try {
+        console.log(collectionName);
         const Model = getModel(collectionName);
         const entry = await Model.findById(entryId);
 
