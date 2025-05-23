@@ -148,7 +148,7 @@ function createInputField(key, field, useTranslation, value = '', translations) 
     }
 }
 
-async function createAttachmentsField(key, field, useTranslation, value = '', translations, collectionName, entryId) {
+async function createAttachmentsField(key, field, useTranslation, value = '', translations, collectionName, entryId, fileOpen = 'closed') {
     const label = useTranslation ? translations[key] || key : key;
     const isStaticField = field.options?.static ? true : false;
     let btnGroups = '',
@@ -160,7 +160,7 @@ async function createAttachmentsField(key, field, useTranslation, value = '', tr
             .map(
                 (file) => `
                         <div class="btn-group w-100 mb-2 px-0" role="group" dir="ltr" file-id="${file._id}">
-                            <a href="/file/${collectionName}/${entryId}/${file._id}" class="btn fw-bold text-start py-3" style="flex-grow: 1;" download>
+                            <a href="/${fileOpen === 'open' ? 'file-open' : 'file'}/${collectionName}/${entryId}/${file._id}" class="btn fw-bold text-start py-3" style="flex-grow: 1;" download>
                                 <span class="d-none d-md-inline-block"> ${shortenFileName(file.name, 50)}</span>
                                 <span class="d-inline-block d-md-none"> ${shortenFileName(file.name, 20)}</span>
                             </a>
@@ -226,7 +226,7 @@ async function createFileInputField(key, field, useTranslation, value = '', tran
     </div>`;
 }
 
-async function generateFormFields(schema, data = {}, useTranslation = false, translations, collectionName, entryId) {
+async function generateFormFields(schema, data = {}, useTranslation = false, translations, collectionName, entryId, fileOpen) {
     const fields = [];
     const forbidden = ['_id', '__v', 'dateOfRegistration', 'createdAt', 'updatedAt'];
 
@@ -239,7 +239,7 @@ async function generateFormFields(schema, data = {}, useTranslation = false, tra
                 let fieldHtml;
 
                 if (field.options.fieldType === 'files') {
-                    fieldHtml = await createAttachmentsField(key, field, useTranslation, existingValue, translations, collectionName, entryId);
+                    fieldHtml = await createAttachmentsField(key, field, useTranslation, existingValue, translations, collectionName, entryId, fileOpen);
                 } else if (field.options.fieldType === 'file') {
                     fieldHtml = await createFileInputField(key, field, useTranslation, existingValue, translations, collectionName, entryId);
                 } else if (field.options.fieldType === 'photo') {

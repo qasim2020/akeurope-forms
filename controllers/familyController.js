@@ -108,7 +108,7 @@ exports.familyOpen = async (req, res) => {
             await entry.save();
         }
 
-        const formFields = await generateFormFields(FamilyArabic.schema, entry, true, translations, 'FamilyArabic', entry._id);
+        const formFields = await generateFormFields(FamilyArabic.schema, entry, true, translations, 'FamilyArabic', entry._id, 'open');
         res.render('formOpen', {
             layout: 'main',
             data: {

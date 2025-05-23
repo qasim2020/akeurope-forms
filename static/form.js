@@ -375,23 +375,23 @@ const saveForm = async function (elem) {
     $('#entry-container').find('.is-valid').removeClass('is-valid');
     $('#entry-container').find('.is-invalid').removeClass('is-invalid');
     $('#entry-container').find('.invalid-feedback').remove();
-
-    $('#entry-container .field-control').each(async function () {
-        const isHidden = $(this).closest('.field').hasClass('d-none');
-        if (isHidden) return;
-        const fieldValue = $(this).val() || $(this).find('[type=radio]:checked').val();
+    const elements = $('#entry-container .field-control').toArray();
+    for (const el of elements) {
+        const isHidden = $(el).closest('.field').hasClass('d-none');
+        if (isHidden) continue;
+        const fieldValue = $(el).val() || $(el).find('[type=radio]:checked').val();
         if (fieldValue) {
             try {
-                const dir = $(this).closest('.field').attr('dir');
-                const isRadioBtn = $(this).find('[type=radio]:checked').val();
-                const isUniqueField = $(this).attr('is-unique') === 'true';
-                const isStaticField = $(this).attr('is-static') === 'true';
-                const maskPattern = $(this).attr('mask-pattern');
-                const isFilesController = $(this).closest('.attachments-controller').length > 0;
-                const fieldName = $(this).attr('name');
+                const dir = $(el).closest('.field').attr('dir');
+                const isRadioBtn = $(el).find('[type=radio]:checked').val();
+                const isUniqueField = $(el).attr('is-unique') === 'true';
+                const isStaticField = $(el).attr('is-static') === 'true';
+                const maskPattern = $(el).attr('mask-pattern');
+                const isFilesController = $(el).closest('.attachments-controller').length > 0;
+                const fieldName = $(el).attr('name');
 
                 if (typeof maskPattern === 'string' && maskPattern.length > 0) {
-                    const showUser = $(this).attr('placeholder');
+                    const showUser = $(el).attr('placeholder');
                     const isValid = checkMaskPattern(maskPattern, fieldValue);
                     if (!isValid) throw new Error(`${fieldValue} do not match ${showUser}`);
                 }
@@ -399,11 +399,11 @@ const saveForm = async function (elem) {
                 if (isUniqueField) {
                     await validateField(fieldName, fieldValue);
                     await saveField(fieldName, fieldValue);
-                    $(this).attr({ disabled: true });
+                    $(el).attr({ disabled: true });
                 }
 
                 if (isStaticField) {
-                    $(this).attr({ disabled: true });
+                    $(el).attr({ disabled: true });
                     await saveField(fieldName, fieldValue);
                 }
 
@@ -412,29 +412,29 @@ const saveForm = async function (elem) {
                 }
 
                 if (isRadioBtn) {
-                    convertRadioToInput(this, fieldName, fieldValue, isStaticField, dir);
+                    convertRadioToInput(el, fieldName, fieldValue, isStaticField, dir);
                 }
 
                 if (isFilesController) {
-                    const filesUploaded = $(this).closest('.attachments-controller').find('.btn-group').get().length > 0;
+                    const filesUploaded = $(el).closest('.attachments-controller').find('.btn-group').get().length > 0;
                     if (!filesUploaded) {
                         throw new Error('Invalid entry');
                     };
                 }
 
-                addFieldSuccess(this);
+                addFieldSuccess(el);
             } catch (error) {
                 console.log(error);
                 isValid = false;
                 const message = error.responseText || error.message || 'Unknown error - handle it';
-                addFieldError(this, message);
+                addFieldError(el, message);
             }
         } else {
             isValid = false;
             const message = 'Invalid entry';
-            addFieldError(this, message);
+            addFieldError(el, message);
         }
-    });
+    };
 
     if (!isValid) {
         $(elem).addClass('bg-danger');
