@@ -105,7 +105,8 @@ exports.sendCode = async (req, res) => {
 
 exports.sendEmailCode = async (req, res) => {
     try {
-        const { email } = req.body;
+        const { email: emailReceived } = req.body;
+        const email = emailReceived.trim();
         if (!email) throw new Error('Email is required');
         if (!isValidEmail(email))
             throw new Error(`Email ${email} is invalid.`);
