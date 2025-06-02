@@ -14,4 +14,9 @@ router.get('/logout', authController.logout);
 router.post('/send-email-code', authController.sendEmailCode);
 router.post('/verify-email-code', authController.verifyEmailCode);
 
+router.get('/resetlink/:userId/:token', authController.resetLink);
+router.post('/register-user/:userId/:token', authController.registerUser);
+router.get('/login', (req, res) => res.render('login'));
+router.post('/login', authController.login);
+
 module.exports = router;

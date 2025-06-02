@@ -46,7 +46,6 @@ const handleSubmitBtn = function () {
                 fieldStatuses.push('pending');
             }
         } else {
-            debugger;
             fieldStatuses.push('pending');
         }
     });

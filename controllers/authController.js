@@ -6,17 +6,17 @@ const twilioClient = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKE
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const User = require('../models/User');
 const GazaOrphan = require('../models/GazaOrphan');
-const { isValidEmail } = require('../modules/checkValidForm');
+const { isValidEmail, isStrongPassword } = require('../modules/checkValidForm');
 const { sendEmail } = require('../modules/sendMail');
 
 const FamilyArabic = require('../models/FamilyArabic');
 
 exports.landing = async (req, res) => {
-    return res.render('landing');
+    return res.render('login');
 };
 
 exports.orphan = async (req, res) => {
-    if (!req.session.user) return res.render('orphan', { layout: 'main' });
+    if (!req.session.user) return res.render('login', { layout: 'main' });
 
     const latest = await GazaOrphan.findOne({
         $or: [
@@ -123,7 +123,6 @@ exports.sendEmailCode = async (req, res) => {
     }
 };
 
-
 exports.verifyEmailCode = async (req, res) => {
     try {
         const { code } = req.body;
@@ -181,12 +180,113 @@ exports.logout = async (req, res) => {
             if (req.query.projectSlug === 'egypt-family') {
                 res.redirect('/family');
             } else if (req.query.projectSlug === 'gaza-orphans') {
-                res.redirect('/orphan');   
+                res.redirect('/orphan');
             } else {
                 throw new Error('Invalid project slug');
             }
         });
     } else {
         res.redirect('/');
+    }
+};
+
+exports.resetLink = async (req, res) => {
+    try {
+        const { userId, token } = req.params;
+        const user = await User.findOne({
+            _id: userId,
+        }).lean();
+        if (!user || !user.resetPasswordToken) throw new Error(`User not found`);
+        const isValid = user.resetPasswordToken === token;
+        if (!isValid) {
+            throw new Error(`Invalid token for ${user.name}`);
+        }
+        const isActive = user.resetPasswordExpires > Date.now();
+        if (!isActive) {
+            throw new Error(`Token expired for ${user.name} - please generate a new token.`);
+        }
+        res.status(200).render('register', {
+            data: {
+                name: user.name,
+                phoneNumber: user.phoneNumber,
+                userId,
+                token
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(400).render('error', {
+            error: error.message || 'Server error',
+            heading: 'Authentication failed',
+            redirect: '/'
+        });
+    }
+}
+
+exports.registerUser = async (req, res) => {
+    try {
+        const { password } = req.body;
+        if (!isStrongPassword(password)) {
+            console.log(password);
+            console.log(isStrongPassword(password))
+            throw new Error('Minimum 8 characters, at least one uppercase letter, one lowercase letter, one number, and one special character')
+        }
+        const { userId, token } = req.params;
+        const user = await User.findOne({
+            _id: userId,
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: Date.now() },
+        });
+        if (!user) throw new Error(`User not found`);
+        if (user.password) {
+            throw new Error('Password is already set.')
+        }
+        user.verified = true;
+        user.password = password;
+        await user.save();
+        const slug = user.projects[0];
+        if (slug === 'gaza-orphans') {
+            res.status(200).send('User registered');
+        } else {
+            res.status(400).send(`Project ${slug} is not supported`);
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(400).send(error.message || 'Server error = check please');
+    }
+}
+
+exports.login = async (req, res) => {
+    try {
+        const { phoneNumber, password } = req.body;
+        let user = await User.findOne({ phoneNumber });
+
+        if (!user) throw new Error(`User with phone number: ${phoneNumber} was not found.`)
+
+        user = await User.findOne({ phoneNumber: phoneNumber, password: { $exists: true } });
+
+        if (!user) throw new Error('You have not yet created a password. Please use the reset-password link provided by alkhidmat europe to create a password.')
+
+        const loginCondition = process.env.ENV === 'testtest' ?
+            user :
+            user && (await user.comparePassword(password));
+        if (loginCondition) {
+            if (user.status === 'blocked') {
+                return res.status(400).send('User is blocked. Please contact akeurope team to resolve the issue.');
+            }
+            req.session.user = user;
+            req.session.cookie.maxAge = 1000 * 60 * 60 * 24 * 30;
+            const slug = user.projects[0];
+            if (slug === 'gaza-orphans') {
+                res.status(200).send('orphan');
+            } else {
+                res.status(400).send(`Project ${slug} is not supported`);
+            }
+        } else {
+            res.status(400).send(`Password mismatch for phone number: ${user.phoneNumber}. Please reach out to us to get a new password link.`);
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(400).send(error.message || 'Server Error');
     }
 };

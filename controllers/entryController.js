@@ -185,9 +185,14 @@ exports.saveArrayField = async (req, res) => {
             throw new Error('Incomplete fields');
         }
 
-
         const model = getModel(collectionName);
-        const entry = await model.findOne({_id: entryId, 'uploadedBy.actorId': req.session.user._id}).lean();
+        const entry = await model.findOne({
+            $or: [
+                {_id: entryId, 'uploadedBy.actorId': req.session.user?._id},
+                {_id: entryId, phoneNo1: req.session.user?.phoneNumber},
+                {_id: entryId, phoneNo2: req.session.user?.phoneNumber},
+            ]
+        }).lean();
         if (!entry) throw new Error('Entry not found in session');
 
         const schemaField = model.schema.path(fieldName);

@@ -23,4 +23,15 @@ const getSlug = (collectionName) => {
     }
 };
 
-module.exports = { getModel, getSlug};
+const getModelFromSlug = (slug) => {
+    switch (slug) {
+        case 'gaza-orphans': 
+            return GazaOrphan;
+        case 'egypt-family':
+            return FamilyArabic;
+        default:
+            throw new Error('Invalid collection name');
+    }
+}
+
+module.exports = { getModel, getSlug, getModelFromSlug };

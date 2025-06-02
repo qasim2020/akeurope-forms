@@ -1,7 +1,7 @@
 const { getModel, getSlug } = require('../modules/getModel');
 
 const authenticate = (req, res, next) => {
-    if (req.session.verified) {
+    if (req.session.verified || req.session.user?.verified) {
         req.user = req.session.user;
         return next();
     }
