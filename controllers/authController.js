@@ -227,8 +227,6 @@ exports.registerUser = async (req, res) => {
     try {
         const { password } = req.body;
         if (!isStrongPassword(password)) {
-            console.log(password);
-            console.log(isStrongPassword(password))
             throw new Error('Minimum 8 characters, at least one uppercase letter, one lowercase letter, one number, and one special character')
         }
         const { userId, token } = req.params;
@@ -237,19 +235,18 @@ exports.registerUser = async (req, res) => {
             resetPasswordToken: token,
             resetPasswordExpires: { $gt: Date.now() },
         });
-        if (!user) throw new Error(`User not found`);
-        if (user.password) {
-            throw new Error('Password is already set.')
+        if (!user) throw new Error(`User not found or token expired - please ask our team for a new link.`);
+        const slug = user.projects[0];
+        if (slug !== 'gaza-orphans') {
+            throw new Error(`Project ${slug} is not yet supported`);
         }
         user.verified = true;
         user.password = password;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
         await user.save();
-        const slug = user.projects[0];
-        if (slug === 'gaza-orphans') {
-            res.status(200).send('User registered');
-        } else {
-            res.status(400).send(`Project ${slug} is not supported`);
-        }
+        res.status(200).send('User registered');
+
     } catch (error) {
         console.error(error);
         res.status(400).send(error.message || 'Server error = check please');
