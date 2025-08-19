@@ -58,7 +58,10 @@ app.use('/static', express.static(path.join(__dirname, 'static')));
 
 app.use((req, res, next) => {
     res.set('Cache-Control', 'no-store');
-    console.log(req.originalUrl);
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const timestamp = new Date().toISOString();
+    const country = req.headers['cf-ipcountry'] || 'Unknown';
+    console.log(`${timestamp} | ${ip} | ${country} | ${req.originalUrl} `);
     let oldSend = res.send;
     let oldJson = res.json;
 
@@ -83,7 +86,7 @@ app.use((req, res, next) => {
                 status: res.statusCode,
                 url: req.originalUrl,
             };
-            console.log(errorData);
+            sendErrorToTelegram(errorData);
         }
     });
 
